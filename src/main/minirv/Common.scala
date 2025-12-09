@@ -1,0 +1,118 @@
+// MiniRV 共享定义
+package minirv
+
+import chisel3._
+import chisel3.util._
+
+/**
+  * MiniRV 配置常量
+  */
+object Config {
+  val XLEN = 32          // 数据宽度 (RV32)
+  val ADDR_WIDTH = 32    // 地址宽度
+  val INST_WIDTH = 32    // 指令宽度
+  val REG_ADDR_W = 5     // 寄存器地址宽度 (32个寄存器)
+}
+
+/**
+  * RISC-V 指令操作码 (opcode) 定义
+  * opcode 是指令的 [6:0] 位
+  */
+object Opcode {
+  // R-type: 寄存器-寄存器运算
+  val R_TYPE    = "b0110011".U(7.W)
+  // I-type: 立即数运算、Load、JALR
+  val I_TYPE    = "b0010011".U(7.W)
+  val LOAD      = "b0000011".U(7.W)
+  val JALR      = "b1100111".U(7.W)
+  // S-type: Store
+  val STORE     = "b0100011".U(7.W)
+  // B-type: 分支
+  val BRANCH    = "b1100011".U(7.W)
+  // U-type: LUI, AUIPC
+  val LUI       = "b0110111".U(7.W)
+  val AUIPC     = "b0010111".U(7.W)
+  // J-type: JAL
+  val JAL       = "b1101111".U(7.W)
+}
+
+/**
+  * ALU 操作码
+  */
+object ALUOp {
+  val ADD  = 0.U(4.W)
+  val SUB  = 1.U(4.W)
+  val AND  = 2.U(4.W)
+  val OR   = 3.U(4.W)
+  val XOR  = 4.U(4.W)
+  val SLL  = 5.U(4.W)   // 逻辑左移
+  val SRL  = 6.U(4.W)   // 逻辑右移
+  val SRA  = 7.U(4.W)   // 算术右移
+  val SLT  = 8.U(4.W)   // 有符号比较
+  val SLTU = 9.U(4.W)   // 无符号比较
+}
+
+/**
+  * IFU -> IDU 接口
+  */
+class IF2ID extends Bundle {
+  val pc   = UInt(Config.ADDR_WIDTH.W)
+  val inst = UInt(Config.INST_WIDTH.W)
+}
+
+/**
+  * IDU -> EXU 接口
+  */
+class ID2EX extends Bundle {
+  val pc      = UInt(Config.ADDR_WIDTH.W)
+  val rs1_val = UInt(Config.XLEN.W)       // rs1 寄存器值
+  val rs2_val = UInt(Config.XLEN.W)       // rs2 寄存器值
+  val imm     = UInt(Config.XLEN.W)       // 立即数
+  val rd_addr = UInt(Config.REG_ADDR_W.W) // 目标寄存器地址
+  val alu_op  = UInt(4.W)                 // ALU 操作码
+  val alu_src = Bool()                    // ALU 第二操作数选择 (0: rs2, 1: imm)
+  val mem_wen = Bool()                    // 内存写使能
+  val mem_ren = Bool()                    // 内存读使能
+  val reg_wen = Bool()                    // 寄存器写使能
+  val is_branch = Bool()                  // 是否为分支指令
+  val is_jal    = Bool()                  // 是否为 JAL
+  val is_jalr   = Bool()                  // 是否为 JALR
+}
+
+/**
+  * EXU -> LSU 接口
+  */
+class EX2LS extends Bundle {
+  val alu_result = UInt(Config.XLEN.W)    // ALU 计算结果
+  val rs2_val    = UInt(Config.XLEN.W)    // Store 数据
+  val rd_addr    = UInt(Config.REG_ADDR_W.W)
+  val mem_wen    = Bool()
+  val mem_ren    = Bool()
+  val reg_wen    = Bool()
+}
+
+/**
+  * LSU -> WBU 接口
+  */
+class LS2WB extends Bundle {
+  val wb_data = UInt(Config.XLEN.W)       // 写回数据
+  val rd_addr = UInt(Config.REG_ADDR_W.W) // 写回寄存器地址
+  val reg_wen = Bool()                    // 寄存器写使能
+}
+
+/**
+  * 寄存器堆读端口
+  */
+class RegFileReadPort extends Bundle {
+  val addr = Input(UInt(Config.REG_ADDR_W.W))
+  val data = Output(UInt(Config.XLEN.W))
+}
+
+/**
+  * 寄存器堆写端口
+  */
+class RegFileWritePort extends Bundle {
+  val addr = Input(UInt(Config.REG_ADDR_W.W))
+  val data = Input(UInt(Config.XLEN.W))
+  val en   = Input(Bool())
+}
