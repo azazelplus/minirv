@@ -11,6 +11,11 @@
 #
 # Licensed under the Apache License, Version 2.0
 
+# mill程序的职责是编译, 链接和运行.scala文件为.class文件. 然后JVM执行.
+# ./mill是一个bash脚本. 它被称为引导脚本(bootstrapper)
+# 它检查你是否在~/.cache中安装了mill. 如果没有, 自动从github下载对应版本. 
+# 然后, 它执行mill可执行文件, 并传递所有参数.
+
 set -e
 
 if [ -z "${DEFAULT_MILL_VERSION}" ] ; then

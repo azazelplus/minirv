@@ -1,3 +1,46 @@
+# azazel---
+
+本模板的mill项目结构如下:
+
+
+
+
+
+```
+├── mill
+├── .mill-jvm-opts(mill的JVM参数文件)
+├── GCD.sv(编译出的verilog文件)
+├── README.md
+├── build.mill(mill构建文件)
+├── build.sbt(sbt构建文件. 我们用mill, 所以用不到)
+├── filelist.f
+├── mill
+├── out(编译文件)
+│   ├── chisel_template
+│   ├── mill
+│   ├── mill-build
+│   ├── mill-chrome-profile.json
+│   ├── mill-dependency-tree.json
+│   ├── mill-invalidation-tree.json
+│   ├── mill-launcher
+│   ├── mill-lock
+│   ├── mill-no-server
+│   ├── mill-profile.json
+│   └── mill-runner-state.json
+├── project
+│   ├── build.properties
+│   └── plugins.sbt
+└── src(源代码)
+    ├── main
+    └── test
+```
+
+
+
+
+
+
+
 Chisel Project Template
 =======================
 
