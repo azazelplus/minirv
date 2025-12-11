@@ -1,3 +1,13 @@
+error id: file://<WORKSPACE>/build.mill:mill/define/Module#millSourcePath().
+file://<WORKSPACE>/build.mill
+empty definition using pc, found symbol in pc: mill/define/Module#millSourcePath().
+empty definition using semanticdb
+
+found definition using fallback; symbol millSourcePath
+offset: 1928
+uri: file://<WORKSPACE>/build.mill
+text:
+```scala
 // import Mill dependency
 import mill._
 import mill.define.Sources
@@ -28,8 +38,6 @@ import mill.bsp._
   // test 测试任务
   // 运行任务👇. 它们都会做: 编译项目代码, 启动一个新的JVM子进程, 然后运行项目. 具体来说: 首先mill程序是一个JVM程序. 它自己的main方法在jar包里. 它跑起来后, 调用运行方法(run或runMain). 这个方法开了一个新的子JVM, 新程序寻找main入口(也就是MiniRV.scala中的object MiniRV extends App...这个启动实例, 它调用了main), 整个 真正的minirv项目 作为子进程 从它开始.
     // 1. run 运行任务. mill找到项目中唯一的main方法, 然后调用它. 如果有多个, 报错.
-        //但是如果在minirv对象中写  override def mainClass = Some("minirv.MiniRV")后, run会默认运行这个入口!  
-        //目前我们是这样实践的. 这样可以方便地放入一些测试用的入口, 比如hello.Hello(见./src/main/scala/hello/Hello.scala).  我们可以用./mill minirv.runMain minirv.Hello 来运行一些小测试, 同时用./mill minirv.run来运行主程序.
     // 2. runMain 找到项目中所有main方法, 然后调用它们. 如果没有, 报错.
     // 3. 带参数的runMain: ./mill minirv.runMain minirv.MiniRV  运行特定的main方法.
               //  ./mill minirv.runMain minirv.MiniRV
@@ -45,7 +53,7 @@ import mill.bsp._
 // mill 可执行文件 将会解析传入的参数, 比如`minirv.run`, 分割为`minirv`和`run`. mill会找到 `minirv` 模块, 然后调用其 `run` 方法.
  
 object `minirv` extends SbtModule { m =>
-  override def millSourcePath = super.millSourcePath / os.up
+  override def millSourcePath = super.millSo@@urcePath / os.up
   override def scalaVersion = "2.13.16"
   
   // 指定默认的 main 类（这样 ./mill minirv.run 就会运行 MiniRV, 而不是在有多个main入口的时候报错让你选择.
@@ -85,3 +93,10 @@ object `minirv` extends SbtModule { m =>
 //Seq()是Scala的序列结构大类. 其中, list(链表结构), vector(向量结构)...都是其子类. 如果声明一个Seq, 编译器会根据内容自动选择具体的子类. 默认是List. 接下来你可以用.toVector方法把一个Seq实例从List转换为Vector.比如:
     // val myseq: Seq[Int] = Seq(1,2,3)  // 默认是List. 这一句等价于 val myseq: List[Int] = List(1,2,3)
     // val myvec: Vector[Int] = myseq.toVector  //得到一个和myseq内容一样的Vector.
+
+```
+
+
+#### Short summary: 
+
+empty definition using pc, found symbol in pc: mill/define/Module#millSourcePath().

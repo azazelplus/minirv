@@ -1,3 +1,4 @@
+PC.sv
 IFU.sv
 IDU.sv
 EXU.sv

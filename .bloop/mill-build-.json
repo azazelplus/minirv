@@ -1,0 +1,128 @@
+{
+    "version": "1.4.0",
+    "project": {
+        "name": "mill-build-",
+        "directory": "/home/azazel/minirv/mill-build",
+        "workspaceDir": "/home/azazel/minirv",
+        "sources": [
+            "/home/azazel/minirv/build.mill",
+            "/home/azazel/minirv/out/generateScriptSources.dest"
+        ],
+        "dependencies": [
+            
+        ],
+        "classpath": [
+            "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-moduledefs_2.13/0.11.1/mill-moduledefs_2.13-0.11.1.jar",
+            "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.15/scala-library-2.13.15.jar",
+            "/home/azazel/minirv/mill-build/compile-resources",
+            "/home/azazel/minirv/out/mill-launcher/0.12.5.jar",
+            "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-runner-linenumbers_2.13/0.12.5/mill-runner-linenumbers_2.13-0.12.5.jar",
+            "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-compiler/2.13.15/scala-compiler-2.13.15.jar",
+            "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-main-client/0.12.5/mill-main-client-0.12.5.jar",
+            "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.15/scala-reflect-2.13.15.jar",
+            "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/io/github/java-diff-utils/java-diff-utils/4.12/java-diff-utils-4.12.jar",
+            "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/jline/jline/3.26.3/jline-3.26.3.jar",
+            "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/net/java/dev/jna/jna/5.14.0/jna-5.14.0.jar",
+            "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/sourcecode_2.13/0.3.0/sourcecode_2.13-0.3.0.jar"
+        ],
+        "out": "/home/azazel/minirv/.bloop/out/mill-build-",
+        "classesDir": "/home/azazel/minirv/.bloop/out/mill-build-/classes",
+        "resources": [
+            "/home/azazel/minirv/mill-build/compile-resources"
+        ],
+        "scala": {
+            "organization": "org.scala-lang",
+            "name": "scala-compiler",
+            "version": "2.13.15",
+            "options": [
+                "-Xplugin:/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/scalac-mill-moduledefs-plugin_2.13.15/0.11.1/scalac-mill-moduledefs-plugin_2.13.15-0.11.1.jar",
+                "-Xplugin:/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-runner-linenumbers_2.13/0.12.5/mill-runner-linenumbers_2.13-0.12.5.jar,/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-compiler/2.13.15/scala-compiler-2.13.15.jar,/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.15/scala-library-2.13.15.jar,/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-moduledefs_2.13/0.11.1/mill-moduledefs_2.13-0.11.1.jar,/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-main-client/0.12.5/mill-main-client-0.12.5.jar,/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.15/scala-reflect-2.13.15.jar,/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/io/github/java-diff-utils/java-diff-utils/4.12/java-diff-utils-4.12.jar,/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/jline/jline/3.26.3/jline-3.26.3.jar,/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/net/java/dev/jna/jna/5.14.0/jna-5.14.0.jar,/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/sourcecode_2.13/0.3.0/sourcecode_2.13-0.3.0.jar",
+                "-deprecation",
+                "-Xplugin-require:mill-linenumber-plugin",
+                "-Xplugin-require:auto-override-plugin"
+            ],
+            "jars": [
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-compiler/2.13.15/scala-compiler-2.13.15.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.15/scala-reflect-2.13.15.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.15/scala-library-2.13.15.jar"
+            ]
+        },
+        "java": {
+            "options": [
+                
+            ]
+        },
+        "platform": {
+            "name": "jvm",
+            "config": {
+                "home": "/usr/lib/jvm/temurin-17-jdk-amd64",
+                "options": [
+                    "-Duser.dir=/home/azazel/minirv"
+                ]
+            },
+            "mainClass": [
+                
+            ],
+            "classpath": [
+                "/home/azazel/minirv/.bloop/out/mill-build-/classes",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-contrib-bloop_2.13/0.12.5/mill-contrib-bloop_2.13-0.12.5.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-moduledefs_2.13/0.11.1/mill-moduledefs_2.13-0.11.1.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.15/scala-library-2.13.15.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/ch/epfl/scala/bloop-config_2.13/1.5.5/bloop-config_2.13-1.5.5.jar",
+                "/home/azazel/minirv/out/mill-launcher/0.12.5.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-runner-linenumbers_2.13/0.12.5/mill-runner-linenumbers_2.13-0.12.5.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-compiler/2.13.15/scala-compiler-2.13.15.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.15/scala-library-2.13.15.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-moduledefs_2.13/0.11.1/mill-moduledefs_2.13-0.11.1.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-main-client/0.12.5/mill-main-client-0.12.5.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.15/scala-reflect-2.13.15.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/io/github/java-diff-utils/java-diff-utils/4.12/java-diff-utils-4.12.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/jline/jline/3.26.3/jline-3.26.3.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/net/java/dev/jna/jna/5.14.0/jna-5.14.0.jar",
+                "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/sourcecode_2.13/0.3.0/sourcecode_2.13-0.3.0.jar"
+            ],
+            "resources": [
+                "/home/azazel/minirv/mill-build/compile-resources"
+            ]
+        },
+        "resolution": {
+            "modules": [
+                {
+                    "organization": "org.scala-lang",
+                    "name": "scala-library",
+                    "version": "2.13.15",
+                    "artifacts": [
+                        {
+                            "name": "scala-library",
+                            "path": "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.15/scala-library-2.13.15.jar"
+                        },
+                        {
+                            "name": "scala-library",
+                            "classifier": "sources",
+                            "path": "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.15/scala-library-2.13.15-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "mill-moduledefs_2.13",
+                    "version": "0.11.1",
+                    "artifacts": [
+                        {
+                            "name": "mill-moduledefs_2.13",
+                            "path": "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-moduledefs_2.13/0.11.1/mill-moduledefs_2.13-0.11.1.jar"
+                        },
+                        {
+                            "name": "mill-moduledefs_2.13",
+                            "classifier": "sources",
+                            "path": "/home/azazel/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-moduledefs_2.13/0.11.1/mill-moduledefs_2.13-0.11.1-sources.jar"
+                        }
+                    ]
+                }
+            ]
+        },
+        "tags": [
+            "library"
+        ]
+    }
+}
