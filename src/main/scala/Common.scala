@@ -73,10 +73,13 @@ class ID2EX extends Bundle {
   val alu_src = Bool()                    // ALU 第二操作数选择 (0: rs2, 1: imm)
   val mem_wen = Bool()                    // 内存写使能
   val mem_ren = Bool()                    // 内存读使能
+  val mem_op  = UInt(3.W)                 // 内存操作类型 (funct3: lw/lbu/sw/sb)
   val reg_wen = Bool()                    // 寄存器写使能
   val is_branch = Bool()                  // 是否为分支指令
   val is_jal    = Bool()                  // 是否为 JAL
   val is_jalr   = Bool()                  // 是否为 JALR
+  val is_lui    = Bool()                  // 是否为 LUI
+  val is_auipc  = Bool()                  // 是否为 AUIPC
 }
 
 /**
@@ -88,6 +91,7 @@ class EX2LS extends Bundle {
   val rd_addr    = UInt(Config.REG_ADDR_W.W)
   val mem_wen    = Bool()
   val mem_ren    = Bool()
+  val mem_op     = UInt(3.W)              // 内存操作类型 (funct3)
   val reg_wen    = Bool()
 }
 
@@ -116,3 +120,30 @@ class RegFileWritePort extends Bundle {
   val data = Input(UInt(Config.XLEN.W))
   val en   = Input(Bool())
 }
+
+
+
+
+// 打拍寄存器
+class PipeStage extends Module {
+  val io = IO(new Bundle {
+    val in  = Input(UInt(4.W))
+    val out = Output(UInt(4.W))
+  })
+
+  // ① 定义一个寄存器，复位时值为 0，宽度为 4
+  val piped_value = RegInit(0.U(4.W)) 
+
+  // ② 使用非阻塞逻辑：将输入赋值给寄存器
+  // Chisel 会自动在 always @(posedge clock) 块中生成非阻塞赋值 (<=)
+  piped_value := io.in
+
+  // ③ 将寄存器的值输出
+  io.out := piped_value 
+}
+// 结果：io.out 的值比 io.in 滞后一个时钟周期
+
+
+
+
+

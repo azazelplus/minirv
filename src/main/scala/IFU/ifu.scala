@@ -10,15 +10,11 @@ import minirv._
   * 
   * 功能：
   * 1. 使用 PC 模块获取当前指令地址
-  * 2. 从指令存储器读取指令
+  * 2. 通过 DPI-C 从存储器读取指令（不再拉到顶层）
   * 3. 将 PC 和指令传递给 IDU
   */
 class IFU extends Module {
   val io = IO(new Bundle {
-    // 指令存储器接口
-    val imem_addr = Output(UInt(Config.ADDR_WIDTH.W))  // 指令地址输出
-    val imem_data = Input(UInt(Config.INST_WIDTH.W))   // 指令数据输入
-    
     // 输出到 IDU
     val out = Output(new IF2ID)
     
@@ -34,10 +30,12 @@ class IFU extends Module {
   pc_module.io.jump_en   := io.jump_en
   pc_module.io.jump_addr := io.jump_addr
 
-  // 使用 PC 模块的输出作为指令地址
-  io.imem_addr := pc_module.io.pc
-  
+  // 实例化 DPI-C 存储器读取模块（取指）
+  val imem_read = Module(new PMEMRead)
+  imem_read.io.clock := clock
+  imem_read.io.raddr := pc_module.io.pc
+
   // 输出到 IDU
   io.out.pc   := pc_module.io.pc
-  io.out.inst := io.imem_data
+  io.out.inst := imem_read.io.rdata
 }

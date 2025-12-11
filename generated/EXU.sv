@@ -9,16 +9,20 @@ module EXU(
   input         io_in_alu_src,
                 io_in_mem_wen,
                 io_in_mem_ren,
-                io_in_reg_wen,
+  input  [2:0]  io_in_mem_op,
+  input         io_in_reg_wen,
                 io_in_is_branch,
                 io_in_is_jal,
                 io_in_is_jalr,
+                io_in_is_lui,
+                io_in_is_auipc,
   output [31:0] io_out_alu_result,
                 io_out_rs2_val,
   output [4:0]  io_out_rd_addr,
   output        io_out_mem_wen,
                 io_out_mem_ren,
-                io_out_reg_wen,
+  output [2:0]  io_out_mem_op,
+  output        io_out_reg_wen,
                 io_jump_en,
   output [31:0] io_jump_addr
 );
@@ -42,16 +46,22 @@ module EXU(
      {io_in_rs1_val & alu_b},
      {io_in_rs1_val - alu_b},
      {io_in_rs1_val + alu_b}};
-  wire              _io_out_alu_result_T = io_in_is_jal | io_in_is_jalr;
-  assign io_out_alu_result = _io_out_alu_result_T ? io_in_pc + 32'h4 : _GEN[io_in_alu_op];
+  wire [31:0]       _branch_addr_T = io_in_pc + io_in_imm;
+  wire              _io_jump_en_T = io_in_is_jal | io_in_is_jalr;
+  assign io_out_alu_result =
+    io_in_is_lui
+      ? io_in_imm
+      : io_in_is_auipc
+          ? _branch_addr_T
+          : _io_jump_en_T ? io_in_pc + 32'h4 : _GEN[io_in_alu_op];
   assign io_out_rs2_val = io_in_rs2_val;
   assign io_out_rd_addr = io_in_rd_addr;
   assign io_out_mem_wen = io_in_mem_wen;
   assign io_out_mem_ren = io_in_mem_ren;
+  assign io_out_mem_op = io_in_mem_op;
   assign io_out_reg_wen = io_in_reg_wen;
-  assign io_jump_en =
-    _io_out_alu_result_T | io_in_is_branch & io_in_rs1_val == io_in_rs2_val;
+  assign io_jump_en = _io_jump_en_T | io_in_is_branch & io_in_rs1_val == io_in_rs2_val;
   assign io_jump_addr =
-    io_in_is_jalr ? io_in_rs1_val + io_in_imm & 32'hFFFFFFFE : io_in_pc + io_in_imm;
+    io_in_is_jalr ? io_in_rs1_val + io_in_imm & 32'hFFFFFFFE : _branch_addr_T;
 endmodule
 

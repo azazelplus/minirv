@@ -2,8 +2,6 @@
 module IFU(
   input         clock,
                 reset,
-  output [31:0] io_imem_addr,
-  input  [31:0] io_imem_data,
   output [31:0] io_out_pc,
                 io_out_inst,
   input         io_jump_en,
@@ -18,8 +16,11 @@ module IFU(
     .io_jump_addr (io_jump_addr),
     .io_pc        (_pc_module_io_pc)
   );
-  assign io_imem_addr = _pc_module_io_pc;
+  PMEMRead imem_read (
+    .clock (clock),
+    .raddr (_pc_module_io_pc),
+    .rdata (io_out_inst)
+  );
   assign io_out_pc = _pc_module_io_pc;
-  assign io_out_inst = io_imem_data;
 endmodule
 

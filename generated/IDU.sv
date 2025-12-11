@@ -15,10 +15,13 @@ module IDU(
   output        io_out_alu_src,
                 io_out_mem_wen,
                 io_out_mem_ren,
-                io_out_reg_wen,
+  output [2:0]  io_out_mem_op,
+  output        io_out_reg_wen,
                 io_out_is_branch,
                 io_out_is_jal,
-                io_out_is_jalr
+                io_out_is_jalr,
+                io_out_is_lui,
+                io_out_is_auipc
 );
 
   wire            is_i_type = io_in_inst[6:0] == 7'h13;
@@ -65,10 +68,13 @@ module IDU(
   assign io_out_alu_src = io_in_inst[6:0] != 7'h33;
   assign io_out_mem_wen = is_store;
   assign io_out_mem_ren = is_load;
+  assign io_out_mem_op = io_in_inst[14:12];
   assign io_out_reg_wen =
     is_r_type | is_i_type | is_load | is_jal | is_jalr | is_lui | is_auipc;
   assign io_out_is_branch = is_branch;
   assign io_out_is_jal = is_jal;
   assign io_out_is_jalr = is_jalr;
+  assign io_out_is_lui = is_lui;
+  assign io_out_is_auipc = is_auipc;
 endmodule
 

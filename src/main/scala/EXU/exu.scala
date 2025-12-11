@@ -48,6 +48,17 @@ class EXU extends Module {
     is(ALUOp.SLTU) { alu_result := (alu_a < alu_b).asUInt }
   }
 
+  // LUI 和 AUIPC 特殊处理
+  val lui_result   = in.imm                     // LUI: rd = imm << 12 (已在立即数生成时处理)
+  val auipc_result = in.pc + in.imm             // AUIPC: rd = pc + (imm << 12)
+
+  // 选择最终的 ALU 结果
+  val final_alu_result = MuxCase(alu_result, Seq(
+    in.is_lui   -> lui_result,
+    in.is_auipc -> auipc_result,
+    (in.is_jal || in.is_jalr) -> (in.pc + 4.U)  // JAL/JALR 存 PC+4
+  ))
+
   // 分支条件判断 (根据 funct3，这里简化处理)
   // TODO: 需要从 IDU 传递 funct3 信息
   val branch_taken = WireDefault(false.B)
@@ -65,10 +76,11 @@ class EXU extends Module {
   io.jump_addr := Mux(in.is_jalr, jalr_addr, branch_addr)
 
   // 输出到 LSU
-  io.out.alu_result := Mux(in.is_jal || in.is_jalr, in.pc + 4.U, alu_result)  // JAL/JALR 存 PC+4
+  io.out.alu_result := final_alu_result
   io.out.rs2_val    := in.rs2_val
   io.out.rd_addr    := in.rd_addr
   io.out.mem_wen    := in.mem_wen
   io.out.mem_ren    := in.mem_ren
+  io.out.mem_op     := in.mem_op   // 传递内存操作类型
   io.out.reg_wen    := in.reg_wen
 }

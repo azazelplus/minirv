@@ -99,8 +99,11 @@ class IDU extends Module {
   io.out.alu_src  := !is_r_type  // 非 R-type 使用立即数
   io.out.mem_wen  := is_store
   io.out.mem_ren  := is_load
+  io.out.mem_op   := funct3      // 传递 funct3 用于区分 lw/lbu/sw/sb
   io.out.reg_wen  := is_r_type || is_i_type || is_load || is_jal || is_jalr || is_lui || is_auipc
   io.out.is_branch := is_branch
   io.out.is_jal   := is_jal
   io.out.is_jalr  := is_jalr
+  io.out.is_lui   := is_lui
+  io.out.is_auipc := is_auipc
 }

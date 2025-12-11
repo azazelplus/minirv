@@ -22,23 +22,14 @@ import _root_.circt.stage.ChiselStage
   * 
   * 连接所有子模块：IFU -> IDU -> EXU -> LSU -> WBU
   * 单周期实现，无流水线
+  * 
+  * 使用 DPI-C 机制访问存储器，不再需要外部存储器接口
   */
 class MiniRV extends Module {
   val io = IO(new Bundle {
-    // 指令存储器接口.
-    // imem=instruction memory指令存储器; dmem=data memory数据存储器
-    // Input()和Output()是chisel提供的方向修饰器.
-    // ADDR_WIDTH = 32， INST_WIDTH = 32
-    // XLEN = 32
-    val imem_addr = Output(UInt(Config.ADDR_WIDTH.W))
-    val imem_data = Input(UInt(Config.INST_WIDTH.W))
-    
-    // 数据存储器接口
-    val dmem_addr  = Output(UInt(Config.ADDR_WIDTH.W))
-    val dmem_wdata = Output(UInt(Config.XLEN.W))
-    val dmem_wen   = Output(Bool())
-    val dmem_ren   = Output(Bool())
-    val dmem_rdata = Input(UInt(Config.XLEN.W))
+    // 调试接口（可选）
+    val debug_pc = Output(UInt(Config.ADDR_WIDTH.W))
+    val debug_inst = Output(UInt(Config.INST_WIDTH.W))
   })
 
   // 实例化各模块
@@ -49,9 +40,7 @@ class MiniRV extends Module {
   val wbu = Module(new WBU)
   val regfile = Module(new RegFile)
 
-  // IFU 连接
-  io.imem_addr     := ifu.io.imem_addr
-  ifu.io.imem_data := io.imem_data
+  // IFU 连接（不再需要外部存储器接口，IFU 内部使用 DPI-C）
   ifu.io.jump_en   := exu.io.jump_en
   ifu.io.jump_addr := exu.io.jump_addr
 
@@ -65,19 +54,24 @@ class MiniRV extends Module {
   // EXU 连接
   exu.io.in := idu.io.out
 
-  // LSU 连接
+  // LSU 连接（不再需要外部存储器接口，LSU 内部使用 DPI-C）
   lsu.io.in := exu.io.out
-  io.dmem_addr  := lsu.io.dmem_addr
-  io.dmem_wdata := lsu.io.dmem_wdata
-  io.dmem_wen   := lsu.io.dmem_wen
-  io.dmem_ren   := lsu.io.dmem_ren
-  lsu.io.dmem_rdata := io.dmem_rdata
 
   // WBU 连接
   wbu.io.in := lsu.io.out
   regfile.io.rd_addr := wbu.io.rd_addr
   regfile.io.rd_data := wbu.io.rd_data
   regfile.io.rd_wen  := wbu.io.rd_wen
+
+  // EBREAK 检测（用于仿真终止）
+  val ebreak_detect = Module(new EBREAKDetect)
+  ebreak_detect.io.clock := clock
+  ebreak_detect.io.inst  := ifu.io.out.inst
+  ebreak_detect.io.valid := true.B
+
+  // 调试输出
+  io.debug_pc   := ifu.io.out.pc
+  io.debug_inst := ifu.io.out.inst
 }
 
 /**
