@@ -96,7 +96,11 @@ class IDU extends Module {
   io.out.imm      := imm
   io.out.rd_addr  := rd
   io.out.alu_op   := alu_op
-  io.out.alu_src  := !is_r_type  // 非 R-type 使用立即数
+  // ALU 第二操作数选择：
+  // - R-type: rs2
+  // - Branch: 通常需要 rs2 参与比较（即使当前 EXU 里没有用 ALU 做比较，也建议保持语义正确）
+  // - 其他（I/Load/Store/JALR 等）: imm
+  io.out.alu_src  := !(is_r_type || is_branch)
   io.out.mem_wen  := is_store
   io.out.mem_ren  := is_load
   io.out.mem_op   := funct3      // 传递 funct3 用于区分 lw/lbu/sw/sb

@@ -4,7 +4,8 @@
 
 set -e
 
-# 项目根目录
+# sim项目根目录, 即`./sim`  
+# $0表示自指, 当前脚本的文件名. dirname去掉的 最后一段路径. (不管最后是文件还是目录都一样)
 PROJ_ROOT=$(dirname "$0")/..
 cd "$PROJ_ROOT"
 
@@ -46,7 +47,8 @@ verilator --cc --exe --build --trace \
 
 cd ..
 
-# 3. 运行仿真
+# 3. 运行仿真. $1表示第一个命令行参数, 即要加载的程序二进制文件. -n: 非空则为真. ${2:-10000}表示如果没有提供$2则默认为10000.
+# 用法是 ./sim.sh <program.bin> [max_cycles]
 echo "=== Step 3: Running Simulation ==="
 if [ -n "$1" ]; then
     ./"$BUILD_DIR"/obj_dir/VMiniRV "$1" "${2:-10000}"

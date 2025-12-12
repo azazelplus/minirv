@@ -1,5 +1,13 @@
 // MiniRV 仿真环境 - C++ 代码
-// 实现 DPI-C 函数和存储器模拟
+// 实现 DPI-C 函数和存储器模拟.
+// 使用方式: 在./sim/sim.sh脚本中, 调用verilator编译的命令里, 指定这个main.cpp参与编译链接.
+// main.cpp提供了DPIC.scala中声明的DPI-C函数实现. DPIC.scala编译后, 产生sv代码:
+    //PMEM_READ.sv, PMEM_WRITE.sv, EBREAK_HANDLER.sv  对应三个module.
+    // 拿第一个模块举例. Verilator的行为:
+        // 在编译 PMEM_READ.sv 时会识别到: 这个模块需要一个外部符号 `pmem_read`. 
+        // 在构建 Verilator 可执行文件时, 你需要显式指定这个main.cpp给verilator一起编译和链接: `verilator --cc --exe --build ... ../sim/main.cpp -o VMiniRV`
+        //`../sim/main.cpp -o VMiniRV`的意思就是: 把 main.cpp 编译进最终的 VMiniRV 可执行文件里.
+
 
 #include <cstdint>
 #include <cstdio>
@@ -17,7 +25,7 @@
 // 存储器大小：128MB
 #define MEM_SIZE (128 * 1024 * 1024)
 
-// 存储器基地址（RISC-V 典型的程序起始地址）
+// 存储器基地址 (RISC-V 典型的程序起始地址) UL表示编译器强制解释字面量为unsigned long.  wsl中UL是64bit. 其实可以用unsigned int(U)?
 #define MEM_BASE 0x80000000UL
 
 // 存储器数组
@@ -33,8 +41,12 @@ static inline uint32_t addr_to_index(uint32_t addr) {
     return addr - MEM_BASE;
 }
 
-// ============ DPI-C 函数实现 ============
 
+// ============ DPI-C 函数实现 ============
+//extern "C" {...} 这些函数用C的方式导出. 不要用 C++ 的名字修饰规则（name mangling）.
+// name mangling: 就是编译器为了支持函数重载等特性, 对函数偷偷改名.  你写一个int pmem_read(int); 编译器实际上会把它改成_Z10pmem_readi之类的. 
+// C++等支持重载的高级语言有这个特性. C不会.
+//原因: 此处我们需要让 SystemVerilog 代码能够调用这些函数. SystemVerilog 只能调用 C 风格的函数名(没有名字修饰).
 extern "C" {
 
 /**
@@ -42,8 +54,9 @@ extern "C" {
  * @param raddr: 读地址（已按 4 字节对齐）
  * @return: 32 位数据
  */
-int pmem_read(int raddr) {
-    uint32_t addr = (uint32_t)raddr;
+//
+uint32_t pmem_read(uint32_t raddr) {
+    uint32_t addr = raddr;
     
     if (!addr_valid(addr)) {
         printf("[ERROR] pmem_read: invalid address 0x%08x\n", addr);
@@ -56,7 +69,7 @@ int pmem_read(int raddr) {
     // 调试输出（可选）
     // printf("[DEBUG] pmem_read: addr=0x%08x, data=0x%08x\n", addr, data);
     
-    return (int)data;
+    return data;
 }
 
 /**
@@ -90,7 +103,7 @@ void pmem_write(int waddr, int wdata, char wmask) {
 
 /**
  * ebreak_handler - 处理 EBREAK 指令
- * 在仿真中检测到 EBREAK 时调用，用于终止仿真
+ * 在仿真中检测到 EBREAK 时调用，用于终止仿真. 其实就是塞一个exit()函数到main里.
  */
 void ebreak_handler() {
     printf("\n[INFO] EBREAK detected, simulation finished.\n");
@@ -132,7 +145,9 @@ static long load_program(const char* filename) {
     return read_size;
 }
 
-// ============ 主函数 ============
+
+
+// ============ 仿真主函数 ============
 
 int main(int argc, char** argv) {
     // 检查命令行参数

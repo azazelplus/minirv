@@ -8,6 +8,7 @@ module PMEMWrite(
 );
 
   // DPI-C 函数声明
+  // 注意: DPI-C 函数的参数和返回值类型需要与 C++ 端一致.
   import "DPI-C" function void pmem_write(
     input int waddr,
     input int wdata,

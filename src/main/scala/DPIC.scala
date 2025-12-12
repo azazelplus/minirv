@@ -18,7 +18,7 @@ import chisel3._
 import chisel3.util._
 
 /**
-  * 内存模块(DPI-C 存储器读取模块) Phy-MEM.
+  * 内存模块(DPI-C 存储器读取模块) Phy-MEM. 单周期访问.
   * 
   * 使用 Chisel 的 BlackBox 机制，定义外部 DPI-C 函数接口。
   * 实际的函数实现在 C++ 代码中。
@@ -36,23 +36,30 @@ class PMEMRead extends BlackBox with HasBlackBoxInline {
     val rdata  = Output(UInt(32.W))  // 读数据
   })
 
-  // 内联 SystemVerilog 代码，使用 DPI-C 调用
+  // 内联 SystemVerilog 代码，使用 DPI-C 调用. stripMargin是字符串的对齐方法(用内部`|`实现. stripMargin方法会删除字符串每行开头直到`|`之前的所有缩进.同时清除`|`.)
   setInline("PMEMRead.sv",
-    """module PMEMRead(
+    """
+      |module PMEMRead(
       |  input         clock,
       |  input  [31:0] raddr,
       |  output [31:0] rdata
       |);
       |
       |  // DPI-C 函数声明
-      |  import "DPI-C" function int pmem_read(input int raddr);
+      |  // 注意: DPI-C function的参数和返回值类型需要与 C++ 端一致.
+      |  // SV的 int unsigned 对应 C++ 的 unsigned int.
+      |  // 事实上很多示例用 SV的int对应C++的int(导致C++中为了处理地址, 要强行转换一次到uint). 这是历史原因...
+      |  import "DPI-C" function int unsigned pmem_read(input int unsigned raddr);
       |
       |  // 调用 DPI-C 函数读取存储器
       |  // 地址按 4 字节对齐
-      |  assign rdata = pmem_read({raddr[31:2], 2'b00});
+      |  // assign rdata = pmem_read({raddr[31:2], 2'b00});   // 如果你想让寄存器瞬间访问而不是单周期...
+      |  always @(posedge clock) begin
+      |     rdata <= pmem_read({raddr[31:2], 2'b00});
+      |  end
       |
       |endmodule
-      |""".stripMargin)
+    """.stripMargin)
 }
 
 
@@ -63,7 +70,7 @@ class PMEMRead extends BlackBox with HasBlackBoxInline {
   * pmem_write: 向存储器写入数据
   *   - waddr: 写地址（需按 4 字节对齐）
   *   - wdata: 写数据
-  *   - wmask: 写掩码（按字节，4 位）
+  *   - wmask: 写掩码(按字节，4 位)
   */
 class PMEMWrite extends BlackBox with HasBlackBoxInline {
   val io = IO(new Bundle {
@@ -83,8 +90,9 @@ class PMEMWrite extends BlackBox with HasBlackBoxInline {
       |  input  [31:0] wdata,
       |  input  [3:0]  wmask
       |);
-      |
+
       |  // DPI-C 函数声明
+      |  // 注意: DPI-C 函数的参数和返回值类型需要与 C++ 端一致.
       |  import "DPI-C" function void pmem_write(
       |    input int waddr,
       |    input int wdata,
