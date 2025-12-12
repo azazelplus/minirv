@@ -1,12 +1,24 @@
 // DPI-C 存储器访问接口
-// 通过 DPI-C 机制与 C++ 仿真环境交互
+// 通过 DPI-C 机制与 C++ 仿真环境交互。
+
+
+// DPI-C(direct programming interface-c) 是一种用于将system verilog和c/c++代码进行交互的技术.
+// 它允许verilog代码直接调用c/c++函数，反之亦然.
+// 它允许你在 Verilog 代码里直接写 pmem_read(...)，然后仿真器（比如 Verilator）在运行时，会跳出去执行你写好的 C++ 函数，拿回结果后再跳回硬件世界.
+
+
+
+
+
+
+
 package minirv
 
 import chisel3._
 import chisel3.util._
 
 /**
-  * DPI-C 存储器读取模块
+  * 内存模块(DPI-C 存储器读取模块) Phy-MEM.
   * 
   * 使用 Chisel 的 BlackBox 机制，定义外部 DPI-C 函数接口。
   * 实际的函数实现在 C++ 代码中。
@@ -15,6 +27,8 @@ import chisel3.util._
   *   - raddr: 读地址（需按 4 字节对齐）
   *   - 返回: 32 位数据
   */
+// BlackBox 是 Chisel类, 用于定义与外部模块的接口.
+// HasBlackBoxInline 是 Chisel trait, 用于在 Verilog 代码中内联 SystemVerilog 代码.
 class PMEMRead extends BlackBox with HasBlackBoxInline {
   val io = IO(new Bundle {
     val clock  = Input(Clock())
@@ -40,6 +54,8 @@ class PMEMRead extends BlackBox with HasBlackBoxInline {
       |endmodule
       |""".stripMargin)
 }
+
+
 
 /**
   * DPI-C 存储器写入模块
