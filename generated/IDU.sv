@@ -65,7 +65,7 @@ module IDU(
                       : 32'h0;
   assign io_out_rd_addr = io_in_inst[11:7];
   assign io_out_alu_op = is_r_type | is_i_type ? _GEN[io_in_inst[14:12]] : 4'h0;
-  assign io_out_alu_src = io_in_inst[6:0] != 7'h33;
+  assign io_out_alu_src = ~(is_r_type | is_branch);
   assign io_out_mem_wen = is_store;
   assign io_out_mem_ren = is_load;
   assign io_out_mem_op = io_in_inst[14:12];

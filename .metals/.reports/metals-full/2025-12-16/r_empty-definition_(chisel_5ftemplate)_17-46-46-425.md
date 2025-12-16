@@ -1,3 +1,28 @@
+error id: file://<WORKSPACE>/src/main/scala/IDU/idu.scala:
+file://<WORKSPACE>/src/main/scala/IDU/idu.scala
+empty definition using pc, found symbol in pc: 
+empty definition using semanticdb
+empty definition using fallback
+non-local guesses:
+	 -chisel3/io/out/mem_不同方寸类型op.
+	 -chisel3/io/out/mem_不同方寸类型op#
+	 -chisel3/io/out/mem_不同方寸类型op().
+	 -chisel3/util/io/out/mem_不同方寸类型op.
+	 -chisel3/util/io/out/mem_不同方寸类型op#
+	 -chisel3/util/io/out/mem_不同方寸类型op().
+	 -minirv/io/out/mem_不同方寸类型op.
+	 -minirv/io/out/mem_不同方寸类型op#
+	 -minirv/io/out/mem_不同方寸类型op().
+	 -io/out/mem_不同方寸类型op.
+	 -io/out/mem_不同方寸类型op#
+	 -io/out/mem_不同方寸类型op().
+	 -scala/Predef.io.out.mem_不同方寸类型op.
+	 -scala/Predef.io.out.mem_不同方寸类型op#
+	 -scala/Predef.io.out.mem_不同方寸类型op().
+offset: 3832
+uri: file://<WORKSPACE>/src/main/scala/IDU/idu.scala
+text:
+```scala
 // MiniRV 译码单元 (Instruction Decode Unit)
 package minirv.idu
 
@@ -91,7 +116,7 @@ class IDU extends Module {
   }
 
 
-  // 控制信号生成.通过opcode可以把指令分为9类. 它们是is_系列.
+  // 控制信号生成
   val is_r_type  = opcode === Opcode.R_TYPE
   val is_i_type  = opcode === Opcode.I_TYPE
   val is_load    = opcode === Opcode.LOAD
@@ -101,7 +126,6 @@ class IDU extends Module {
   val is_jalr    = opcode === Opcode.JALR
   val is_lui     = opcode === Opcode.LUI
   val is_auipc   = opcode === Opcode.AUIPC
-  // val is_fence   = opcode === Opcode.FENCE // Fence 指令 (未实现)
 
   // 源寄存器读地址
   io.rs1_addr := rs1
@@ -125,10 +149,8 @@ class IDU extends Module {
   io.out.mem_wen  := is_store
   io.out.mem_ren  := is_load
 
-  // 信号mem_op用来区分不同访存类型.
-  io.out.mem_op   := funct3      // 传递 funct3 用于区分 lw/lbu/sw/sb
-
-  //信号reg_wen表示是否写回寄存器堆.
+  // 信号mem_op用来区分
+  io.out.mem_op   :@@= funct3      // 传递 funct3 用于区分 lw/lbu/sw/sb
   io.out.reg_wen  := is_r_type || is_i_type || is_load || is_jal || is_jalr || is_lui || is_auipc
   io.out.is_branch := is_branch
   io.out.is_jal   := is_jal
@@ -159,3 +181,10 @@ ShiftRegister(...)    显式地创建一个移位寄存器。            Reg 集
 
 */
 
+
+```
+
+
+#### Short summary: 
+
+empty definition using pc, found symbol in pc: 

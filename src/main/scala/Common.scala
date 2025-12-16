@@ -34,6 +34,8 @@ object Opcode {
   val AUIPC     = "b0010111".U(7.W)
   // J-type: JAL
   val JAL       = "b1101111".U(7.W)
+
+  // val FENCE    = "b0001111".U(7.W) // Fence 指令 (未实现). 在简单的单核非缓存处理器中, 它们的作用有限.
 }
 
 /**
@@ -45,11 +47,11 @@ object ALUOp {
   val AND  = 2.U(4.W)
   val OR   = 3.U(4.W)
   val XOR  = 4.U(4.W)
-  val SLL  = 5.U(4.W)   // 逻辑左移
-  val SRL  = 6.U(4.W)   // 逻辑右移
-  val SRA  = 7.U(4.W)   // 算术右移
-  val SLT  = 8.U(4.W)   // 有符号比较
-  val SLTU = 9.U(4.W)   // 无符号比较
+  val SLL  = 5.U(4.W)   // shift left logic 逻辑左移
+  val SRL  = 6.U(4.W)   // shift right logic 逻辑右移
+  val SRA  = 7.U(4.W)   // shift right arithmetic 算术右移
+  val SLT  = 8.U(4.W)   // set less than 有符号比较
+  val SLTU = 9.U(4.W)   // set less than unsigned 无符号比较
 }
 
 /**

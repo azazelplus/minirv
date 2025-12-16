@@ -1,5 +1,9 @@
 name: Continuous Integration
 
+# 触发条件:
+# 1. push到main分支或tag时触发
+# 2. pull request时触发
+# 3. 手动触发
 on:
   push:
     tags: ['*']
@@ -7,27 +11,33 @@ on:
   pull_request:
   workflow_dispatch:
 
+# github actions for CI: 一台干净的ubuntu虚拟机.
 jobs:
   ci:
     name: ci
     runs-on: ubuntu-latest
+    # steps: 块是具体的工作流. run: 执行shell命令; uses: 使用action(预定义任务). action就是一个可复用的shell代码块, 可以来自github官方或者其他来源. `actions/checkout@v4`是github官方提供的action, 用于检出代码. with: 总是和use: 一起出现, 它用来向被调用的action提供输入input. 输入一般是配置选项.
     steps:
+      # Checkout
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Cleanup
-        run: sed -i "s/%NAME%/test/g" build.mill
+
       - name: Cache Scala
         uses: coursier/cache-action@v6
+
       - name: Setup Scala
         uses: coursier/setup-action@v1
         with:
           jvm: adopt:11
-          apps: sbt
+
+
       - name: Setup Dependencies
         run: |
           sudo apt-get install verilator
           verilator --version
-      - name: SBT Test
-        run: sbt test
-      - name: mill Test
-        run: ./mill _.test
+          
+    # 构建测试. `chmod +x mill`以此确保 mill 脚本有执行权限 (防止 git 提交时权限丢失)
+      - name: Run Minirv
+              run: |
+                chmod +x mill  
+                ./mill minirv.run
