@@ -6,7 +6,7 @@ import chisel3.util._
 import minirv._
 
 /**
-  * 内存操作类型 (funct3)
+  * L/S指令区分: 内存操作类型 (funct3)
   */
 object MemOp {
   val LB  = "b000".U(3.W)  // Load Byte (有符号扩展)
@@ -23,30 +23,39 @@ object MemOp {
   * LSU - 访存单元
   * 
   * 功能：
-  * 1. 通过 DPI-C 进行数据存储器读写
+  * 1. 通过外部存储器接口进行数据读写
   * 2. 处理不同宽度的访存 (lw/lbu/sw/sb)
   * 3. 生成写回数据
   */
 class LSU extends Module {
   val io = IO(new Bundle {
-    // 来自 EXU
-    val in = Input(new EX2LS)
-    
-    // 输出到 WBU
-    val out = Output(new LS2WB)
+    // ========== EXU->LSU ==========
+    val in = Input(new EX2LS)   // 输入: EXU->LSU.   alu_result(alu计算结果), store_data(S指令要用的数据), rd_addr(WB用), mem_wen, mem_ren, mem_op, reg_wen
+
+    // ========== LSU->WBU接口 ==========
+    val out = Output(new LS2WB) // 输出: LSU->WBU, 最终写回数据/rd/reg_wen
+
+    // ========== (数据访问Load接口 LSU<->PMEM) ==========
+    val dmem_raddr = Output(UInt(32.W))  // 数据读地址. LSU->PMEM, 给 PMEM 请求读
+    val dmem_rdata = Input(UInt(32.W))   // 数据读出. PMEM->LSU, PMEM 返回 32 位原始读数据
+
+    // ========== (数据写入Store接口 LSU->PMEM) ==========
+    val dmem_wen   = Output(Bool())      // 写使能.   LSU->PMEM, Store 指令时置 1
+    val dmem_waddr = Output(UInt(32.W))  // 写地址.   LSU->PMEM
+    val dmem_wdata = Output(UInt(32.W))  // 写数据.   LSU->PMEM（已按字节 lane 摆放）
+    val dmem_wmask = Output(UInt(4.W))   // 写掩码.   LSU->PMEM（按字节）
   })
+
 
   val in = io.in
   val addr = in.alu_result
   val byte_offset = addr(1, 0)  // 地址的低 2 位，用于选择字节
 
-  // ============ DPI-C 存储器读取 ============
-  val dmem_read = Module(new PMEMRead)
-  dmem_read.io.clock := clock
-  dmem_read.io.raddr := addr
-  
-  // 从 32 位数据中根据地址偏移选择需要的字节/半字/字
-  val rdata_raw = dmem_read.io.rdata
+  // ============ 数据存储器读取 ============
+
+  // LSU透传了io.in.alu_result -> io.dmem_raddr. 这是因为, 只有load 
+  io.dmem_raddr := addr
+  val rdata_raw = io.dmem_rdata
   
   // 根据 mem_op 和地址偏移提取正确的数据
   val load_data = WireDefault(0.U(Config.XLEN.W))
@@ -88,11 +97,9 @@ class LSU extends Module {
     }
   }
 
-  // ============ DPI-C 存储器写入 ============
-  val dmem_write = Module(new PMEMWrite)
-  dmem_write.io.clock := clock
-  dmem_write.io.wen   := in.mem_wen
-  dmem_write.io.waddr := addr
+  // ============ 数据存储器写入 ============
+  io.dmem_wen   := in.mem_wen
+  io.dmem_waddr := addr
   
   // 根据 mem_op 和地址偏移生成写数据和写掩码
   val wdata = WireDefault(0.U(32.W))
@@ -101,24 +108,24 @@ class LSU extends Module {
   switch(in.mem_op) {
     is(MemOp.SW) {
       // Store Word
-      wdata := in.rs2_val
+      wdata := in.store_data
       wmask := "b1111".U
     }
     is(MemOp.SH) {
       // Store Halfword
       wdata := Mux(byte_offset(1),
-        Cat(in.rs2_val(15, 0), 0.U(16.W)),
-        Cat(0.U(16.W), in.rs2_val(15, 0))
+        Cat(in.store_data(15, 0), 0.U(16.W)),
+        Cat(0.U(16.W), in.store_data(15, 0))
       )
       wmask := Mux(byte_offset(1), "b1100".U, "b0011".U)
     }
     is(MemOp.SB) {
       // Store Byte
       wdata := MuxLookup(byte_offset, 0.U)(Seq(
-        0.U -> Cat(0.U(24.W), in.rs2_val(7, 0)),
-        1.U -> Cat(0.U(16.W), in.rs2_val(7, 0), 0.U(8.W)),
-        2.U -> Cat(0.U(8.W), in.rs2_val(7, 0), 0.U(16.W)),
-        3.U -> Cat(in.rs2_val(7, 0), 0.U(24.W))
+        0.U -> Cat(0.U(24.W), in.store_data(7, 0)),
+        1.U -> Cat(0.U(16.W), in.store_data(7, 0), 0.U(8.W)),
+        2.U -> Cat(0.U(8.W), in.store_data(7, 0), 0.U(16.W)),
+        3.U -> Cat(in.store_data(7, 0), 0.U(24.W))
       ))
       wmask := MuxLookup(byte_offset, 0.U)(Seq(
         0.U -> "b0001".U,
@@ -129,8 +136,8 @@ class LSU extends Module {
     }
   }
   
-  dmem_write.io.wdata := wdata
-  dmem_write.io.wmask := wmask
+  io.dmem_wdata := wdata
+  io.dmem_wmask := wmask
 
   // ============ 输出到 WBU ============
   // 选择写回数据：Load 指令从内存读，其他从 ALU

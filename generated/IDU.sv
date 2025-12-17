@@ -7,8 +7,8 @@ module IDU(
   input  [31:0] io_rs1_data,
                 io_rs2_data,
   output [31:0] io_out_pc,
-                io_out_rs1_val,
-                io_out_rs2_val,
+                io_out_rs1_data,
+                io_out_rs2_data,
                 io_out_imm,
   output [4:0]  io_out_rd_addr,
   output [3:0]  io_out_alu_op,
@@ -18,7 +18,8 @@ module IDU(
   output [2:0]  io_out_mem_op,
   output        io_out_reg_wen,
                 io_out_is_branch,
-                io_out_is_jal,
+  output [2:0]  io_out_branch_op,
+  output        io_out_is_jal,
                 io_out_is_jalr,
                 io_out_is_lui,
                 io_out_is_auipc
@@ -45,8 +46,8 @@ module IDU(
   assign io_rs1_addr = io_in_inst[19:15];
   assign io_rs2_addr = io_in_inst[24:20];
   assign io_out_pc = io_in_pc;
-  assign io_out_rs1_val = io_rs1_data;
-  assign io_out_rs2_val = io_rs2_data;
+  assign io_out_rs1_data = io_rs1_data;
+  assign io_out_rs2_data = io_rs2_data;
   assign io_out_imm =
     is_jal
       ? {{12{io_in_inst[31]}}, io_in_inst[19:12], io_in_inst[20], io_in_inst[30:21], 1'h0}
@@ -72,6 +73,7 @@ module IDU(
   assign io_out_reg_wen =
     is_r_type | is_i_type | is_load | is_jal | is_jalr | is_lui | is_auipc;
   assign io_out_is_branch = is_branch;
+  assign io_out_branch_op = io_in_inst[14:12];
   assign io_out_is_jal = is_jal;
   assign io_out_is_jalr = is_jalr;
   assign io_out_is_lui = is_lui;

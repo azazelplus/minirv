@@ -3,7 +3,7 @@
 module PMEMRead(
   input         clock,
   input  [31:0] raddr,
-  output [31:0] rdata
+  output reg [31:0] rdata
 );
 
   // DPI-C 函数声明
@@ -20,4 +20,3 @@ module PMEMRead(
   end
 
 endmodule
-    

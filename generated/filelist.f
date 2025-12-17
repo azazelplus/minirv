@@ -5,4 +5,5 @@ EXU.sv
 LSU.sv
 WBU.sv
 RegFile.sv
+PMEM.sv
 MiniRV.sv

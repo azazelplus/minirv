@@ -59,7 +59,8 @@ uint32_t pmem_read(uint32_t raddr) {
     uint32_t addr = raddr;
     
     if (!addr_valid(addr)) {
-        printf("[ERROR] pmem_read: invalid address 0x%08x\n", addr);
+        // 流水线初始化阶段或非 Load 指令时可能读取无效地址，静默返回 0
+        // printf("[ERROR] pmem_read: invalid address 0x%08x\n", addr);
         return 0;
     }
     
@@ -84,7 +85,8 @@ void pmem_write(int waddr, int wdata, char wmask) {
     uint8_t mask = (uint8_t)wmask & 0x0F;
     
     if (!addr_valid(addr)) {
-        printf("[ERROR] pmem_write: invalid address 0x%08x\n", addr);
+        // 无效写地址可能是程序错误，保留打印但可选注释
+        printf("[WARN] pmem_write: invalid address 0x%08x (ignored)\n", addr);
         return;
     }
     

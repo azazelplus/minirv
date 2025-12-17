@@ -17,6 +17,7 @@ class PC extends Module {
     // PC 更新控制
     val jump_en   = Input(Bool())                       // 跳转使能
     val jump_addr = Input(UInt(Config.ADDR_WIDTH.W))    // 跳转目标地址
+    val stall     = Input(Bool())                       // 流水线暂停信号
     
     // 当前 PC 输出
     val pc        = Output(UInt(Config.ADDR_WIDTH.W))   // 当前 PC 值
@@ -27,13 +28,14 @@ class PC extends Module {
   val pc_reg = RegInit("h80000000".U(Config.ADDR_WIDTH.W))
 
   // 计算下一条 PC
-
   val next_pc_val = Mux(io.jump_en, io.jump_addr, pc_reg + 4.U)
 
-  // 更新 PC 寄存器
-  pc_reg := next_pc_val
+  // 更新 PC 寄存器（stall 时保持不变）
+  when(!io.stall) {
+    pc_reg := next_pc_val
+  }
 
-  // 输出.
+  // 输出
   io.pc      := pc_reg
   io.next_pc := next_pc_val
 }

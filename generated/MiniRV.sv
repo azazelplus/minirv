@@ -6,6 +6,8 @@ module MiniRV(
                 io_debug_inst
 );
 
+  wire [31:0] _pmem_io_imem_rdata;
+  wire [31:0] _pmem_io_dmem_rdata;
   wire [31:0] _regfile_io_rs1_data;
   wire [31:0] _regfile_io_rs2_data;
   wire [4:0]  _wbu_io_rd_addr;
@@ -14,8 +16,13 @@ module MiniRV(
   wire [31:0] _lsu_io_out_wb_data;
   wire [4:0]  _lsu_io_out_rd_addr;
   wire        _lsu_io_out_reg_wen;
+  wire [31:0] _lsu_io_dmem_raddr;
+  wire        _lsu_io_dmem_wen;
+  wire [31:0] _lsu_io_dmem_waddr;
+  wire [31:0] _lsu_io_dmem_wdata;
+  wire [3:0]  _lsu_io_dmem_wmask;
   wire [31:0] _exu_io_out_alu_result;
-  wire [31:0] _exu_io_out_rs2_val;
+  wire [31:0] _exu_io_out_store_data;
   wire [4:0]  _exu_io_out_rd_addr;
   wire        _exu_io_out_mem_wen;
   wire        _exu_io_out_mem_ren;
@@ -26,8 +33,8 @@ module MiniRV(
   wire [4:0]  _idu_io_rs1_addr;
   wire [4:0]  _idu_io_rs2_addr;
   wire [31:0] _idu_io_out_pc;
-  wire [31:0] _idu_io_out_rs1_val;
-  wire [31:0] _idu_io_out_rs2_val;
+  wire [31:0] _idu_io_out_rs1_data;
+  wire [31:0] _idu_io_out_rs2_data;
   wire [31:0] _idu_io_out_imm;
   wire [4:0]  _idu_io_out_rd_addr;
   wire [3:0]  _idu_io_out_alu_op;
@@ -37,30 +44,150 @@ module MiniRV(
   wire [2:0]  _idu_io_out_mem_op;
   wire        _idu_io_out_reg_wen;
   wire        _idu_io_out_is_branch;
+  wire [2:0]  _idu_io_out_branch_op;
   wire        _idu_io_out_is_jal;
   wire        _idu_io_out_is_jalr;
   wire        _idu_io_out_is_lui;
   wire        _idu_io_out_is_auipc;
   wire [31:0] _ifu_io_out_pc;
   wire [31:0] _ifu_io_out_inst;
+  wire [31:0] _ifu_io_imem_addr;
+  reg  [31:0] if_id_pc;
+  reg  [31:0] if_id_inst;
+  reg  [31:0] id_ex_reg_pc;
+  reg  [31:0] id_ex_reg_rs1_data;
+  reg  [31:0] id_ex_reg_rs2_data;
+  reg  [31:0] id_ex_reg_imm;
+  reg  [4:0]  id_ex_reg_rd_addr;
+  reg  [3:0]  id_ex_reg_alu_op;
+  reg         id_ex_reg_alu_src;
+  reg         id_ex_reg_mem_wen;
+  reg         id_ex_reg_mem_ren;
+  reg  [2:0]  id_ex_reg_mem_op;
+  reg         id_ex_reg_reg_wen;
+  reg         id_ex_reg_is_branch;
+  reg  [2:0]  id_ex_reg_branch_op;
+  reg         id_ex_reg_is_jal;
+  reg         id_ex_reg_is_jalr;
+  reg         id_ex_reg_is_lui;
+  reg         id_ex_reg_is_auipc;
+  reg  [31:0] ex_mem_reg_alu_result;
+  reg  [31:0] ex_mem_reg_store_data;
+  reg  [4:0]  ex_mem_reg_rd_addr;
+  reg         ex_mem_reg_mem_wen;
+  reg         ex_mem_reg_mem_ren;
+  reg  [2:0]  ex_mem_reg_mem_op;
+  reg         ex_mem_reg_reg_wen;
+  reg  [31:0] mem_wb_reg_wb_data;
+  reg  [4:0]  mem_wb_reg_rd_addr;
+  reg         mem_wb_reg_reg_wen;
+  wire        ifu_io_stall =
+    id_ex_reg_mem_ren & (|id_ex_reg_rd_addr)
+    & (id_ex_reg_rd_addr == _idu_io_rs1_addr | id_ex_reg_rd_addr == _idu_io_rs2_addr);
+  always @(posedge clock) begin
+    if (reset) begin
+      if_id_pc <= 32'h0;
+      if_id_inst <= 32'h0;
+      id_ex_reg_pc <= 32'h0;
+      id_ex_reg_rs1_data <= 32'h0;
+      id_ex_reg_rs2_data <= 32'h0;
+      id_ex_reg_imm <= 32'h0;
+      id_ex_reg_rd_addr <= 5'h0;
+      id_ex_reg_alu_op <= 4'h0;
+      id_ex_reg_alu_src <= 1'h0;
+      id_ex_reg_mem_wen <= 1'h0;
+      id_ex_reg_mem_ren <= 1'h0;
+      id_ex_reg_mem_op <= 3'h0;
+      id_ex_reg_reg_wen <= 1'h0;
+      id_ex_reg_is_branch <= 1'h0;
+      id_ex_reg_branch_op <= 3'h0;
+      id_ex_reg_is_jal <= 1'h0;
+      id_ex_reg_is_jalr <= 1'h0;
+      id_ex_reg_is_lui <= 1'h0;
+      id_ex_reg_is_auipc <= 1'h0;
+      ex_mem_reg_alu_result <= 32'h0;
+      ex_mem_reg_store_data <= 32'h0;
+      ex_mem_reg_rd_addr <= 5'h0;
+      ex_mem_reg_mem_wen <= 1'h0;
+      ex_mem_reg_mem_ren <= 1'h0;
+      ex_mem_reg_mem_op <= 3'h0;
+      ex_mem_reg_reg_wen <= 1'h0;
+      mem_wb_reg_wb_data <= 32'h0;
+      mem_wb_reg_rd_addr <= 5'h0;
+      mem_wb_reg_reg_wen <= 1'h0;
+    end
+    else begin
+      automatic logic _GEN = _exu_io_jump_en | ifu_io_stall;
+      if (_exu_io_jump_en) begin
+        if_id_pc <= 32'h0;
+        if_id_inst <= 32'h13;
+      end
+      else if (~ifu_io_stall) begin
+        if_id_pc <= _ifu_io_out_pc;
+        if_id_inst <= _ifu_io_out_inst;
+      end
+      id_ex_reg_pc <= _GEN ? 32'h0 : _idu_io_out_pc;
+      id_ex_reg_rs1_data <= _GEN ? 32'h0 : _idu_io_out_rs1_data;
+      id_ex_reg_rs2_data <= _GEN ? 32'h0 : _idu_io_out_rs2_data;
+      id_ex_reg_imm <= _GEN ? 32'h0 : _idu_io_out_imm;
+      id_ex_reg_rd_addr <= _GEN ? 5'h0 : _idu_io_out_rd_addr;
+      id_ex_reg_alu_op <= _GEN ? 4'h0 : _idu_io_out_alu_op;
+      id_ex_reg_alu_src <= ~_GEN & _idu_io_out_alu_src;
+      id_ex_reg_mem_wen <= ~_GEN & _idu_io_out_mem_wen;
+      id_ex_reg_mem_ren <= ~_GEN & _idu_io_out_mem_ren;
+      id_ex_reg_mem_op <= _GEN ? 3'h0 : _idu_io_out_mem_op;
+      id_ex_reg_reg_wen <= ~_GEN & _idu_io_out_reg_wen;
+      id_ex_reg_is_branch <= ~_GEN & _idu_io_out_is_branch;
+      id_ex_reg_branch_op <= _GEN ? 3'h0 : _idu_io_out_branch_op;
+      id_ex_reg_is_jal <= ~_GEN & _idu_io_out_is_jal;
+      id_ex_reg_is_jalr <= ~_GEN & _idu_io_out_is_jalr;
+      id_ex_reg_is_lui <= ~_GEN & _idu_io_out_is_lui;
+      id_ex_reg_is_auipc <= ~_GEN & _idu_io_out_is_auipc;
+      ex_mem_reg_alu_result <= _exu_io_out_alu_result;
+      ex_mem_reg_store_data <= _exu_io_out_store_data;
+      ex_mem_reg_rd_addr <= _exu_io_out_rd_addr;
+      ex_mem_reg_mem_wen <= _exu_io_out_mem_wen;
+      ex_mem_reg_mem_ren <= _exu_io_out_mem_ren;
+      ex_mem_reg_mem_op <= _exu_io_out_mem_op;
+      ex_mem_reg_reg_wen <= _exu_io_out_reg_wen;
+      mem_wb_reg_wb_data <= _lsu_io_out_wb_data;
+      mem_wb_reg_rd_addr <= _lsu_io_out_rd_addr;
+      mem_wb_reg_reg_wen <= _lsu_io_out_reg_wen;
+    end
+  end // always @(posedge)
   IFU ifu (
-    .clock        (clock),
-    .reset        (reset),
-    .io_out_pc    (_ifu_io_out_pc),
-    .io_out_inst  (_ifu_io_out_inst),
-    .io_jump_en   (_exu_io_jump_en),
-    .io_jump_addr (_exu_io_jump_addr)
+    .clock         (clock),
+    .reset         (reset),
+    .io_out_pc     (_ifu_io_out_pc),
+    .io_out_inst   (_ifu_io_out_inst),
+    .io_jump_en    (_exu_io_jump_en),
+    .io_jump_addr  (_exu_io_jump_addr),
+    .io_stall      (ifu_io_stall),
+    .io_imem_addr  (_ifu_io_imem_addr),
+    .io_imem_rdata (_pmem_io_imem_rdata)
   );
   IDU idu (
-    .io_in_pc         (_ifu_io_out_pc),
-    .io_in_inst       (_ifu_io_out_inst),
+    .io_in_pc         (if_id_pc),
+    .io_in_inst       (if_id_inst),
     .io_rs1_addr      (_idu_io_rs1_addr),
     .io_rs2_addr      (_idu_io_rs2_addr),
-    .io_rs1_data      (_regfile_io_rs1_data),
-    .io_rs2_data      (_regfile_io_rs2_data),
+    .io_rs1_data
+      (ex_mem_reg_reg_wen & (|ex_mem_reg_rd_addr) & ex_mem_reg_rd_addr == _idu_io_rs1_addr
+         ? ex_mem_reg_alu_result
+         : mem_wb_reg_reg_wen & (|mem_wb_reg_rd_addr)
+           & mem_wb_reg_rd_addr == _idu_io_rs1_addr
+             ? mem_wb_reg_wb_data
+             : _regfile_io_rs1_data),
+    .io_rs2_data
+      (ex_mem_reg_reg_wen & (|ex_mem_reg_rd_addr) & ex_mem_reg_rd_addr == _idu_io_rs2_addr
+         ? ex_mem_reg_alu_result
+         : mem_wb_reg_reg_wen & (|mem_wb_reg_rd_addr)
+           & mem_wb_reg_rd_addr == _idu_io_rs2_addr
+             ? mem_wb_reg_wb_data
+             : _regfile_io_rs2_data),
     .io_out_pc        (_idu_io_out_pc),
-    .io_out_rs1_val   (_idu_io_out_rs1_val),
-    .io_out_rs2_val   (_idu_io_out_rs2_val),
+    .io_out_rs1_data  (_idu_io_out_rs1_data),
+    .io_out_rs2_data  (_idu_io_out_rs2_data),
     .io_out_imm       (_idu_io_out_imm),
     .io_out_rd_addr   (_idu_io_out_rd_addr),
     .io_out_alu_op    (_idu_io_out_alu_op),
@@ -70,30 +197,32 @@ module MiniRV(
     .io_out_mem_op    (_idu_io_out_mem_op),
     .io_out_reg_wen   (_idu_io_out_reg_wen),
     .io_out_is_branch (_idu_io_out_is_branch),
+    .io_out_branch_op (_idu_io_out_branch_op),
     .io_out_is_jal    (_idu_io_out_is_jal),
     .io_out_is_jalr   (_idu_io_out_is_jalr),
     .io_out_is_lui    (_idu_io_out_is_lui),
     .io_out_is_auipc  (_idu_io_out_is_auipc)
   );
   EXU exu (
-    .io_in_pc          (_idu_io_out_pc),
-    .io_in_rs1_val     (_idu_io_out_rs1_val),
-    .io_in_rs2_val     (_idu_io_out_rs2_val),
-    .io_in_imm         (_idu_io_out_imm),
-    .io_in_rd_addr     (_idu_io_out_rd_addr),
-    .io_in_alu_op      (_idu_io_out_alu_op),
-    .io_in_alu_src     (_idu_io_out_alu_src),
-    .io_in_mem_wen     (_idu_io_out_mem_wen),
-    .io_in_mem_ren     (_idu_io_out_mem_ren),
-    .io_in_mem_op      (_idu_io_out_mem_op),
-    .io_in_reg_wen     (_idu_io_out_reg_wen),
-    .io_in_is_branch   (_idu_io_out_is_branch),
-    .io_in_is_jal      (_idu_io_out_is_jal),
-    .io_in_is_jalr     (_idu_io_out_is_jalr),
-    .io_in_is_lui      (_idu_io_out_is_lui),
-    .io_in_is_auipc    (_idu_io_out_is_auipc),
+    .io_in_pc          (id_ex_reg_pc),
+    .io_in_rs1_data    (id_ex_reg_rs1_data),
+    .io_in_rs2_data    (id_ex_reg_rs2_data),
+    .io_in_imm         (id_ex_reg_imm),
+    .io_in_rd_addr     (id_ex_reg_rd_addr),
+    .io_in_alu_op      (id_ex_reg_alu_op),
+    .io_in_alu_src     (id_ex_reg_alu_src),
+    .io_in_mem_wen     (id_ex_reg_mem_wen),
+    .io_in_mem_ren     (id_ex_reg_mem_ren),
+    .io_in_mem_op      (id_ex_reg_mem_op),
+    .io_in_reg_wen     (id_ex_reg_reg_wen),
+    .io_in_is_branch   (id_ex_reg_is_branch),
+    .io_in_branch_op   (id_ex_reg_branch_op),
+    .io_in_is_jal      (id_ex_reg_is_jal),
+    .io_in_is_jalr     (id_ex_reg_is_jalr),
+    .io_in_is_lui      (id_ex_reg_is_lui),
+    .io_in_is_auipc    (id_ex_reg_is_auipc),
     .io_out_alu_result (_exu_io_out_alu_result),
-    .io_out_rs2_val    (_exu_io_out_rs2_val),
+    .io_out_store_data (_exu_io_out_store_data),
     .io_out_rd_addr    (_exu_io_out_rd_addr),
     .io_out_mem_wen    (_exu_io_out_mem_wen),
     .io_out_mem_ren    (_exu_io_out_mem_ren),
@@ -103,22 +232,27 @@ module MiniRV(
     .io_jump_addr      (_exu_io_jump_addr)
   );
   LSU lsu (
-    .clock            (clock),
-    .io_in_alu_result (_exu_io_out_alu_result),
-    .io_in_rs2_val    (_exu_io_out_rs2_val),
-    .io_in_rd_addr    (_exu_io_out_rd_addr),
-    .io_in_mem_wen    (_exu_io_out_mem_wen),
-    .io_in_mem_ren    (_exu_io_out_mem_ren),
-    .io_in_mem_op     (_exu_io_out_mem_op),
-    .io_in_reg_wen    (_exu_io_out_reg_wen),
+    .io_in_alu_result (ex_mem_reg_alu_result),
+    .io_in_store_data (ex_mem_reg_store_data),
+    .io_in_rd_addr    (ex_mem_reg_rd_addr),
+    .io_in_mem_wen    (ex_mem_reg_mem_wen),
+    .io_in_mem_ren    (ex_mem_reg_mem_ren),
+    .io_in_mem_op     (ex_mem_reg_mem_op),
+    .io_in_reg_wen    (ex_mem_reg_reg_wen),
     .io_out_wb_data   (_lsu_io_out_wb_data),
     .io_out_rd_addr   (_lsu_io_out_rd_addr),
-    .io_out_reg_wen   (_lsu_io_out_reg_wen)
+    .io_out_reg_wen   (_lsu_io_out_reg_wen),
+    .io_dmem_raddr    (_lsu_io_dmem_raddr),
+    .io_dmem_rdata    (_pmem_io_dmem_rdata),
+    .io_dmem_wen      (_lsu_io_dmem_wen),
+    .io_dmem_waddr    (_lsu_io_dmem_waddr),
+    .io_dmem_wdata    (_lsu_io_dmem_wdata),
+    .io_dmem_wmask    (_lsu_io_dmem_wmask)
   );
   WBU wbu (
-    .io_in_wb_data (_lsu_io_out_wb_data),
-    .io_in_rd_addr (_lsu_io_out_rd_addr),
-    .io_in_reg_wen (_lsu_io_out_reg_wen),
+    .io_in_wb_data (mem_wb_reg_wb_data),
+    .io_in_rd_addr (mem_wb_reg_rd_addr),
+    .io_in_reg_wen (mem_wb_reg_reg_wen),
     .io_rd_addr    (_wbu_io_rd_addr),
     .io_rd_data    (_wbu_io_rd_data),
     .io_rd_wen     (_wbu_io_rd_wen)
@@ -134,12 +268,19 @@ module MiniRV(
     .io_rd_data  (_wbu_io_rd_data),
     .io_rd_wen   (_wbu_io_rd_wen)
   );
-  EBREAKDetect ebreak_detect (
-    .clock (clock),
-    .inst  (_ifu_io_out_inst),
-    .valid (1'h1)
+  PMEM pmem (
+    .clock          (clock),
+    .io_imem_addr   (_ifu_io_imem_addr),
+    .io_imem_rdata  (_pmem_io_imem_rdata),
+    .io_dmem_raddr  (_lsu_io_dmem_raddr),
+    .io_dmem_rdata  (_pmem_io_dmem_rdata),
+    .io_dmem_wen    (_lsu_io_dmem_wen),
+    .io_dmem_waddr  (_lsu_io_dmem_waddr),
+    .io_dmem_wdata  (_lsu_io_dmem_wdata),
+    .io_dmem_wmask  (_lsu_io_dmem_wmask),
+    .io_ebreak_inst (if_id_inst)
   );
-  assign io_debug_pc = _ifu_io_out_pc;
-  assign io_debug_inst = _ifu_io_out_inst;
+  assign io_debug_pc = if_id_pc;
+  assign io_debug_inst = if_id_inst;
 endmodule
 

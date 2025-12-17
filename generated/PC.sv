@@ -4,6 +4,7 @@ module PC(
                 reset,
                 io_jump_en,
   input  [31:0] io_jump_addr,
+  input         io_stall,
   output [31:0] io_pc
 );
 
@@ -11,6 +12,8 @@ module PC(
   always @(posedge clock) begin
     if (reset)
       pc_reg <= 32'h80000000;
+    else if (io_stall) begin
+    end
     else
       pc_reg <= io_jump_en ? io_jump_addr : pc_reg + 32'h4;
   end // always @(posedge)

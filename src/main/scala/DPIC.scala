@@ -42,7 +42,7 @@ class PMEMRead extends BlackBox with HasBlackBoxInline {
       |module PMEMRead(
       |  input         clock,
       |  input  [31:0] raddr,
-      |  output [31:0] rdata
+      |  output reg [31:0] rdata
       |);
       |
       |  // DPI-C 函数声明
@@ -59,7 +59,8 @@ class PMEMRead extends BlackBox with HasBlackBoxInline {
       |  end
       |
       |endmodule
-    """.stripMargin)
+      |
+      |""".stripMargin)
 }
 
 
@@ -107,6 +108,7 @@ class PMEMWrite extends BlackBox with HasBlackBoxInline {
       |  end
       |
       |endmodule
+      |
       |""".stripMargin)
 }
 
@@ -139,5 +141,6 @@ class EBREAKDetect extends BlackBox with HasBlackBoxInline {
       |  end
       |
       |endmodule
+      |
       |""".stripMargin)
 }

@@ -16,22 +16,22 @@ import minirv._
   */
 class IDU extends Module {
   val io = IO(new Bundle {
-    // 来自 IFU
-    val in = Input(new IF2ID)
-    
-    // 寄存器堆读端口
-    val rs1_addr = Output(UInt(Config.REG_ADDR_W.W))
-    val rs2_addr = Output(UInt(Config.REG_ADDR_W.W))
-    val rs1_data = Input(UInt(Config.XLEN.W))
-    val rs2_data = Input(UInt(Config.XLEN.W))
-    
-    // 输出到 EXU
-    val out = Output(new ID2EX)
+    // ========== IFU->IDU ==========
+    val in = Input(new IF2ID)  // 输入: IFU->IDU, 取到的(pc, inst)
+
+    // ========== 读端口  IDU<->RegFile  ==========
+    val rs1_addr = Output(UInt(Config.REG_ADDR_W.W))  // 读地址1. IDU->RegFile
+    val rs2_addr = Output(UInt(Config.REG_ADDR_W.W))  // 读地址2. IDU->RegFile
+    val rs1_data = Input(UInt(Config.XLEN.W))         // 读数据1. RegFile->IDU（顶层已做前递/旁路）
+    val rs2_data = Input(UInt(Config.XLEN.W))         // 读数据2. RegFile->IDU（顶层已做前递/旁路）
+
+    // ========== IDU->EXU ==========
+    val out = Output(new ID2EX)  // 输出: IDU->EXU, 控制信号 + 操作数 + 立即数 + pc
   })
 
   val inst = io.in.inst
 
-  // 指令字段解析
+  // 指令字段切片解析
   val opcode = inst(6, 0)
   val rd     = inst(11, 7)
   val funct3 = inst(14, 12)
@@ -92,10 +92,13 @@ class IDU extends Module {
 
 
   // 控制信号生成.通过opcode可以把指令分为9类. 它们是is_系列.
+  //这些信号用来进一步生成控制信号
   val is_r_type  = opcode === Opcode.R_TYPE
   val is_i_type  = opcode === Opcode.I_TYPE
   val is_load    = opcode === Opcode.LOAD
   val is_store   = opcode === Opcode.STORE
+
+  //下面的信号直接印出来
   val is_branch  = opcode === Opcode.BRANCH
   val is_jal     = opcode === Opcode.JAL
   val is_jalr    = opcode === Opcode.JALR
@@ -103,25 +106,31 @@ class IDU extends Module {
   val is_auipc   = opcode === Opcode.AUIPC
   // val is_fence   = opcode === Opcode.FENCE // Fence 指令 (未实现)
 
-  // 源寄存器读地址
+
+/* 
+output端口 信号连接
+*/
+
+  // output: 源寄存器读地址
   io.rs1_addr := rs1
   io.rs2_addr := rs2
 
-  // 输出
+
   io.out.pc       := io.in.pc
-  io.out.rs1_val  := io.rs1_data
-  io.out.rs2_val  := io.rs2_data
+  io.out.rs1_data := io.rs1_data
+  io.out.rs2_data := io.rs2_data
   io.out.imm      := imm
   io.out.rd_addr  := rd
-  io.out.alu_op   := alu_op
 
+  // ALU控制信号
+  io.out.alu_op   := alu_op
   // ALU 第二操作数选择：
   // - R-type: rs2
   // - Branch: 通常需要 rs2 参与比较（即使当前 EXU 里没有用 ALU 做比较，也建议保持语义正确）
   // - 其他（I/Load/Store/JALR 等）: imm
   io.out.alu_src  := !(is_r_type || is_branch)
 
-
+  // 内存读写使能
   io.out.mem_wen  := is_store
   io.out.mem_ren  := is_load
 
@@ -130,7 +139,10 @@ class IDU extends Module {
 
   //信号reg_wen表示是否写回寄存器堆.
   io.out.reg_wen  := is_r_type || is_i_type || is_load || is_jal || is_jalr || is_lui || is_auipc
+
+  // 其他判断
   io.out.is_branch := is_branch
+  io.out.branch_op := funct3    // 传递分支类型 (funct3)
   io.out.is_jal   := is_jal
   io.out.is_jalr  := is_jalr
   io.out.is_lui   := is_lui

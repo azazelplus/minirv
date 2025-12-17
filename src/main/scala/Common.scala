@@ -36,6 +36,7 @@ object Opcode {
   val JAL       = "b1101111".U(7.W)
 
   // val FENCE    = "b0001111".U(7.W) // Fence 指令 (未实现). 在简单的单核非缓存处理器中, 它们的作用有限.
+  // val SYSTEM   = "b1110011".U(7.W) // 系统指令 (未实现)
 }
 
 /**
@@ -55,6 +56,18 @@ object ALUOp {
 }
 
 /**
+  * 分支操作类型 (funct3)
+  */
+object BranchOp {
+  val BEQ  = "b000".U(3.W)  // 相等
+  val BNE  = "b001".U(3.W)  // 不相等
+  val BLT  = "b100".U(3.W)  // 有符号小于
+  val BGE  = "b101".U(3.W)  // 有符号大于等于
+  val BLTU = "b110".U(3.W)  // 无符号小于
+  val BGEU = "b111".U(3.W)  // 无符号大于等于
+}
+
+/**
   * IFU -> IDU 接口
   */
 class IF2ID extends Bundle {
@@ -67,8 +80,8 @@ class IF2ID extends Bundle {
   */
 class ID2EX extends Bundle {
   val pc      = UInt(Config.ADDR_WIDTH.W)
-  val rs1_val = UInt(Config.XLEN.W)       // rs1 寄存器值
-  val rs2_val = UInt(Config.XLEN.W)       // rs2 寄存器值
+  val rs1_data = UInt(Config.XLEN.W)      // rs1 寄存器值
+  val rs2_data = UInt(Config.XLEN.W)      // rs2 寄存器值
   val imm     = UInt(Config.XLEN.W)       // 立即数
   val rd_addr = UInt(Config.REG_ADDR_W.W) // 目标寄存器地址
   val alu_op  = UInt(4.W)                 // ALU 操作码
@@ -78,6 +91,7 @@ class ID2EX extends Bundle {
   val mem_op  = UInt(3.W)                 // 内存操作类型 (funct3: lw/lbu/sw/sb)
   val reg_wen = Bool()                    // 寄存器写使能
   val is_branch = Bool()                  // 是否为分支指令
+  val branch_op = UInt(3.W)               // 分支类型 (funct3: beq/bne/blt/bge/bltu/bgeu)
   val is_jal    = Bool()                  // 是否为 JAL
   val is_jalr   = Bool()                  // 是否为 JALR
   val is_lui    = Bool()                  // 是否为 LUI
@@ -89,8 +103,8 @@ class ID2EX extends Bundle {
   */
 class EX2LS extends Bundle {
   val alu_result = UInt(Config.XLEN.W)    // ALU 计算结果
-  val rs2_val    = UInt(Config.XLEN.W)    // Store 数据
-  val rd_addr    = UInt(Config.REG_ADDR_W.W)
+  val store_data = UInt(Config.XLEN.W)    // Store 写入数据（来自 rs2，经旁路后透传到 MEM 阶段）
+  val rd_addr    = UInt(Config.REG_ADDR_W.W)  // 目标寄存器地址
   val mem_wen    = Bool()
   val mem_ren    = Bool()
   val mem_op     = UInt(3.W)              // 内存操作类型 (funct3)
