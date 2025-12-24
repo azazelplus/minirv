@@ -1,3 +1,40 @@
+error id: file://<WORKSPACE>/src/main/scala/MiniRV.scala:jump_en
+file://<WORKSPACE>/src/main/scala/MiniRV.scala
+empty definition using pc, found symbol in pc: jump_en
+empty definition using semanticdb
+empty definition using fallback
+non-local guesses:
+	 -chisel3/exu/io/jump_en.
+	 -chisel3/exu/io/jump_en#
+	 -chisel3/exu/io/jump_en().
+	 -chisel3/util/exu/io/jump_en.
+	 -chisel3/util/exu/io/jump_en#
+	 -chisel3/util/exu/io/jump_en().
+	 -minirv/ifu/exu/io/jump_en.
+	 -minirv/ifu/exu/io/jump_en#
+	 -minirv/ifu/exu/io/jump_en().
+	 -minirv/idu/exu/io/jump_en.
+	 -minirv/idu/exu/io/jump_en#
+	 -minirv/idu/exu/io/jump_en().
+	 -minirv/exu/exu/io/jump_en.
+	 -minirv/exu/exu/io/jump_en#
+	 -minirv/exu/exu/io/jump_en().
+	 -minirv/lsu/exu/io/jump_en.
+	 -minirv/lsu/exu/io/jump_en#
+	 -minirv/lsu/exu/io/jump_en().
+	 -minirv/wbu/exu/io/jump_en.
+	 -minirv/wbu/exu/io/jump_en#
+	 -minirv/wbu/exu/io/jump_en().
+	 -exu/io/jump_en.
+	 -exu/io/jump_en#
+	 -exu/io/jump_en().
+	 -scala/Predef.exu.io.jump_en.
+	 -scala/Predef.exu.io.jump_en#
+	 -scala/Predef.exu.io.jump_en().
+offset: 2248
+uri: file://<WORKSPACE>/src/main/scala/MiniRV.scala
+text:
+```scala
 // MiniRV 顶层模块.
 // chisel使用伴生对象的方式生成verilog代码.
 // 所以, 判断哪个module是顶层模块, 就看哪个class有伴生object, 其内部生成verilog代码.
@@ -83,7 +120,7 @@ class MiniRV extends Module {
   val stall = load_use_hazard
   
   // Flush 信号：分支/跳转发生时清空 IF/ID 和 ID/EX 阶段
-  val flush = exu.io.jump_en
+  val flush = exu.io.ju@@mp_en
 
   // ========== 数据前递单元 ==========
   
@@ -98,11 +135,10 @@ class MiniRV extends Module {
   val mem_wb_reg_wen = mem_wb_reg.reg_wen
   
   // 计算前递后的 rs1_data
-  // 优先级：A (EX/MEM) > B (MEM/WB) > C (寄存器堆原值)
-  // A: 当 EX/MEM阶段的指令要写回寄存器堆, 且rd不为0, 且rd等于当前ID阶段的rs1地址
+  // 优先级：EX/MEM > MEM/WB > 寄存器堆原值
   val id_rs1_data_raw = regfile.io.rs1_data
   val id_rs1_data_fwd = MuxCase(id_rs1_data_raw, Seq(
-    (ex_mem_reg_wen && (ex_mem_rd_addr =/= 0.U) && (ex_mem_rd_addr === id_rs1_addr)) -> ex_mem_rd_data, 
+    (ex_mem_reg_wen && (ex_mem_rd_addr =/= 0.U) && (ex_mem_rd_addr === id_rs1_addr)) -> ex_mem_rd_data,
     (mem_wb_reg_wen && (mem_wb_rd_addr =/= 0.U) && (mem_wb_rd_addr === id_rs1_addr)) -> mem_wb_rd_data
   ))
   
@@ -209,3 +245,10 @@ object MiniRV extends App {
   )
   println(s"生成完成！文件位置: $outputDir/MiniRV.sv")
 }
+
+```
+
+
+#### Short summary: 
+
+empty definition using pc, found symbol in pc: jump_en

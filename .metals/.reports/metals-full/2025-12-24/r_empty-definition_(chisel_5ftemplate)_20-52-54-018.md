@@ -1,3 +1,40 @@
+error id: file://<WORKSPACE>/src/main/scala/MiniRV.scala:local1
+file://<WORKSPACE>/src/main/scala/MiniRV.scala
+empty definition using pc, found symbol in pc: local1
+empty definition using semanticdb
+empty definition using fallback
+non-local guesses:
+	 -chisel3/idu/io/rs2_addr.
+	 -chisel3/idu/io/rs2_addr#
+	 -chisel3/idu/io/rs2_addr().
+	 -chisel3/util/idu/io/rs2_addr.
+	 -chisel3/util/idu/io/rs2_addr#
+	 -chisel3/util/idu/io/rs2_addr().
+	 -minirv/ifu/idu/io/rs2_addr.
+	 -minirv/ifu/idu/io/rs2_addr#
+	 -minirv/ifu/idu/io/rs2_addr().
+	 -minirv/idu/idu/io/rs2_addr.
+	 -minirv/idu/idu/io/rs2_addr#
+	 -minirv/idu/idu/io/rs2_addr().
+	 -minirv/exu/idu/io/rs2_addr.
+	 -minirv/exu/idu/io/rs2_addr#
+	 -minirv/exu/idu/io/rs2_addr().
+	 -minirv/lsu/idu/io/rs2_addr.
+	 -minirv/lsu/idu/io/rs2_addr#
+	 -minirv/lsu/idu/io/rs2_addr().
+	 -minirv/wbu/idu/io/rs2_addr.
+	 -minirv/wbu/idu/io/rs2_addr#
+	 -minirv/wbu/idu/io/rs2_addr().
+	 -idu/io/rs2_addr.
+	 -idu/io/rs2_addr#
+	 -idu/io/rs2_addr().
+	 -scala/Predef.idu.io.rs2_addr.
+	 -scala/Predef.idu.io.rs2_addr#
+	 -scala/Predef.idu.io.rs2_addr().
+offset: 1724
+uri: file://<WORKSPACE>/src/main/scala/MiniRV.scala
+text:
+```scala
 // MiniRV 顶层模块.
 // chisel使用伴生对象的方式生成verilog代码.
 // 所以, 判断哪个module是顶层模块, 就看哪个class有伴生object, 其内部生成verilog代码.
@@ -69,10 +106,9 @@ class MiniRV extends Module {
   
   // 从 ID 阶段获取源寄存器地址
   val id_rs1_addr = idu.io.rs1_addr
-  val id_rs2_addr = idu.io.rs2_addr
+  val id_rs2_addr = idu.io.rs2@@_addr
   
   // Load-Use 冒险检测：ID/EX 阶段是 Load 指令，且其 rd 是当前 ID 阶段的 rs1 或 rs2
-  // mem_ren信号就是is_load信号透传. 在当前周期, id_ex_reg中的信号是上一周期ID阶段的信号, 也就是上一条指令的信息.
   // 
   val load_use_hazard = id_ex_reg.mem_ren && 
                         (id_ex_reg.rd_addr =/= 0.U) &&
@@ -98,11 +134,10 @@ class MiniRV extends Module {
   val mem_wb_reg_wen = mem_wb_reg.reg_wen
   
   // 计算前递后的 rs1_data
-  // 优先级：A (EX/MEM) > B (MEM/WB) > C (寄存器堆原值)
-  // A: 当 EX/MEM阶段的指令要写回寄存器堆, 且rd不为0, 且rd等于当前ID阶段的rs1地址
+  // 优先级：EX/MEM > MEM/WB > 寄存器堆原值
   val id_rs1_data_raw = regfile.io.rs1_data
   val id_rs1_data_fwd = MuxCase(id_rs1_data_raw, Seq(
-    (ex_mem_reg_wen && (ex_mem_rd_addr =/= 0.U) && (ex_mem_rd_addr === id_rs1_addr)) -> ex_mem_rd_data, 
+    (ex_mem_reg_wen && (ex_mem_rd_addr =/= 0.U) && (ex_mem_rd_addr === id_rs1_addr)) -> ex_mem_rd_data,
     (mem_wb_reg_wen && (mem_wb_rd_addr =/= 0.U) && (mem_wb_rd_addr === id_rs1_addr)) -> mem_wb_rd_data
   ))
   
@@ -209,3 +244,10 @@ object MiniRV extends App {
   )
   println(s"生成完成！文件位置: $outputDir/MiniRV.sv")
 }
+
+```
+
+
+#### Short summary: 
+
+empty definition using pc, found symbol in pc: local1

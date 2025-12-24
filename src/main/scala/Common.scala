@@ -21,8 +21,8 @@ object Config {
 object Opcode {
   // R-type: 寄存器-寄存器运算
   val R_TYPE    = "b0110011".U(7.W)
-  // I-type: 立即数运算、Load、JALR
-  val I_TYPE    = "b0010011".U(7.W)
+  // I-type: 立即数运算 (OP-IMM)
+  val OP_IMM    = "b0010011".U(7.W)
   val LOAD      = "b0000011".U(7.W)
   val JALR      = "b1100111".U(7.W)
   // S-type: Store

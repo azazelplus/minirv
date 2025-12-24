@@ -1,3 +1,14 @@
+error id: file://<WORKSPACE>/src/main/scala/EXU/exu.scala:scala/package.Seq.
+file://<WORKSPACE>/src/main/scala/EXU/exu.scala
+empty definition using pc, found symbol in pc: 
+found definition using semanticdb; symbol scala/package.Seq.
+empty definition using fallback
+non-local guesses:
+
+offset: 1906
+uri: file://<WORKSPACE>/src/main/scala/EXU/exu.scala
+text:
+```scala
 // MiniRV 执行单元 (Execution Unit)
 package minirv.exu
 
@@ -52,26 +63,25 @@ class EXU extends Module {
 
   // Utype 的 LUI 和 AUIPC 特殊处理
   val lui_result   = in.imm                     // LUI: rd = imm << 12 (已在立即数生成时处理)
-  val pc_plus_imm  = in.pc + in.imm             // AUIPC / JAL / Branch target
+  val auipc_result = in.pc + in.imm             // AUIPC: rd = pc + (imm << 12)
 
 
   // 选择最终的 ALU 结果. 
   // MuxCase 实现优先级编码的MUX. 签名: MuxCase(default: T, choices: Seq[(Bool, T)]): T
   // 第一个参数default是默认值(键值对的值), 第二个参数choices是选择列表(布尔条件, 输出值). 列表按优先级排列!
   // (a->b)等价于(a, b), 元组语法糖. 
-  val final_alu_result = MuxCase(alu_result, Seq(
-    in.is_lui   -> lui_result,    // lui优先级最高. 如果in.is_lui===1, 选择lui_result为最终输出.
-    in.is_auipc -> pc_plus_imm,   // auipc次之.
-    (in.is_jal || in.is_jalr) -> (in.pc + 4.U)  // JAL/JALR 存 PC+4.
-    //如果不是lui, 
+  val final_alu_result = MuxCase(alu_result, @@Seq(
+    in.is_lui   -> lui_result,  // lui优先级最高. 如果in.is_lui===1, 选择
+    in.is_auipc -> auipc_result,
+    (in.is_jal || in.is_jalr) -> (in.pc + 4.U)  // JAL/JALR 存 PC+4
   ))
 
 
 
-  // 处理B-Type. 分支条件判断 (根据 branch_op / funct3)
+  // 分支条件判断 (根据 branch_op / funct3)
   val rs1_s = in.rs1_data.asSInt  // 有符号解释
   val rs2_s = in.rs2_data.asSInt
-  // 控制信号branch_taken: 是否满足分支条件.
+  
   val branch_taken = WireDefault(false.B)
   when(in.is_branch) {
     switch(in.branch_op) {
@@ -85,15 +95,16 @@ class EXU extends Module {
   }
 
 
+
   // 跳转地址计算
-  // val branch_addr = pc_plus_imm         // B-type, JAL (已合并到 pc_plus_imm)
-  val jalr_addr   = (in.rs1_data + in.imm) & ~1.U(Config.ADDR_WIDTH.W)  // JALR. `& ~1`即强制最低位清零, 保证对齐.
+  val branch_addr = in.pc + in.imm         // B-type, JAL
+  val jalr_addr   = (in.rs1_data + in.imm) & ~1.U(Config.ADDR_WIDTH.W)  // JALR
 
 
 
   // 跳转控制
-  io.jump_en := in.is_jal || in.is_jalr || (in.is_branch && branch_taken) //la
-  io.jump_addr := Mux(in.is_jalr, jalr_addr, pc_plus_imm)
+  io.jump_en := in.is_jal || in.is_jalr || (in.is_branch && branch_taken)
+  io.jump_addr := Mux(in.is_jalr, jalr_addr, branch_addr)
 
 
 
@@ -106,3 +117,10 @@ class EXU extends Module {
   io.out.mem_op     := in.mem_op    // mem_op信号在exu透传. 传递内存操作类型
   io.out.reg_wen    := in.reg_wen   // reg_wen信号在exu透传.
 }
+
+```
+
+
+#### Short summary: 
+
+empty definition using pc, found symbol in pc: 

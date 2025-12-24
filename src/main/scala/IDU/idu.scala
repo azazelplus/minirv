@@ -53,10 +53,10 @@ class IDU extends Module {
   // 完整签名: MuxLookup(key: UInt, default: T)(mapping: Seq[(UInt, T)]): T
   // MuxLookup这个allpy函数调用时跟了两个括号, 这是[currying]柯里化特性. 就是把函数的多个参数用多个有序括号给出. 这样好处是提高可读性 和 帮助编译器类型推断.
   // 其中, default是默认[值]. 键值对 匹配失败则返回这个默认[值].
-  // 其中Seq中的元素类型是(UInt, T), 一个一个元组. 元组的第一个元素key必须是UInt类型, 比如`Opcode.I_TYPE`. 第二个元素是值, 类型T(任意).
+  // 其中Seq中的元素类型是(UInt, T), 一个一个元组. 元组的第一个元素key必须是UInt类型, 比如`Opcode.OP_IMM`. 第二个元素是值, 类型T(任意).
   // -> 符号是创建元组的语法糖, A -> B 等同于 (A, B), 仅仅易读这是个键值对.
   val imm = MuxLookup(opcode, 0.U)(Seq(
-    Opcode.I_TYPE -> imm_i,
+    Opcode.OP_IMM -> imm_i,
     Opcode.LOAD   -> imm_i,
     Opcode.JALR   -> imm_i,
     Opcode.STORE  -> imm_s,
@@ -75,7 +75,7 @@ class IDU extends Module {
   
   // R 和 I 指令的 ALU 操作由 funct3/funct7 决定.
   // chisel的等价比较为`===`, 逻辑或为`||`, when块试试always块的抽象代替.
-  when(opcode === Opcode.R_TYPE || opcode === Opcode.I_TYPE) {
+  when(opcode === Opcode.R_TYPE || opcode === Opcode.OP_IMM) {
     alu_op := MuxLookup(funct3, ALUOp.ADD)(Seq(
       // R指令中, funct7(5)位决定是加法(0)/减法(1)
       "b000".U -> Mux(opcode === Opcode.R_TYPE && funct7(5), ALUOp.SUB, ALUOp.ADD),
@@ -94,7 +94,9 @@ class IDU extends Module {
   // 控制信号生成.通过opcode可以把指令分为9类. 它们是is_系列.
   //这些信号用来进一步生成控制信号
   val is_r_type  = opcode === Opcode.R_TYPE
-  val is_i_type  = opcode === Opcode.I_TYPE
+  // RISC-V 官方叫 OP-IMM：addi/andi/ori/xori/slti/sltiu/slli/srli/srai
+  // 注意：LOAD 也属于“RISC-V I-type 编码格式”，但它的 opcode 不等于 Opcode.OP_IMM
+  val is_op_imm  = opcode === Opcode.OP_IMM
   val is_load    = opcode === Opcode.LOAD
   val is_store   = opcode === Opcode.STORE
 
@@ -137,8 +139,13 @@ output端口 信号连接
   // 信号mem_op用来区分不同访存类型.
   io.out.mem_op   := funct3      // 传递 funct3 用于区分 lw/lbu/sw/sb
 
-  //信号reg_wen表示是否写回寄存器堆.
-  io.out.reg_wen  := is_r_type || is_i_type || is_load || is_jal || is_jalr || is_lui || is_auipc
+
+  //信号reg_wen表示是否是写回(WB)寄存器堆(rs1或rs2)的指令.
+  // R-type: 显然要WB. op_imm: 显然要WB. load: 显然要WB
+  // jal/jalr: 将PC+4存入rd.
+  // lui: 把20bit的imm<<12后存入rd. auipc: 把20bit的imm<<12加pc后存入rd.
+  io.out.reg_wen  := is_r_type || is_op_imm || is_load || is_jal || is_jalr || is_lui || is_auipc
+
 
   // 其他判断
   io.out.is_branch := is_branch

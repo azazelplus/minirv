@@ -25,7 +25,7 @@ module IDU(
                 io_out_is_auipc
 );
 
-  wire            is_i_type = io_in_inst[6:0] == 7'h13;
+  wire            is_op_imm = io_in_inst[6:0] == 7'h13;
   wire            is_load = io_in_inst[6:0] == 7'h3;
   wire            is_jalr = io_in_inst[6:0] == 7'h67;
   wire            is_store = io_in_inst[6:0] == 7'h23;
@@ -61,17 +61,17 @@ module IDU(
                  1'h0}
               : is_store
                   ? {{20{io_in_inst[31]}}, io_in_inst[31:25], io_in_inst[11:7]}
-                  : is_jalr | is_load | is_i_type
+                  : is_jalr | is_load | is_op_imm
                       ? {{20{io_in_inst[31]}}, io_in_inst[31:20]}
                       : 32'h0;
   assign io_out_rd_addr = io_in_inst[11:7];
-  assign io_out_alu_op = is_r_type | is_i_type ? _GEN[io_in_inst[14:12]] : 4'h0;
+  assign io_out_alu_op = is_r_type | is_op_imm ? _GEN[io_in_inst[14:12]] : 4'h0;
   assign io_out_alu_src = ~(is_r_type | is_branch);
   assign io_out_mem_wen = is_store;
   assign io_out_mem_ren = is_load;
   assign io_out_mem_op = io_in_inst[14:12];
   assign io_out_reg_wen =
-    is_r_type | is_i_type | is_load | is_jal | is_jalr | is_lui | is_auipc;
+    is_r_type | is_op_imm | is_load | is_jal | is_jalr | is_lui | is_auipc;
   assign io_out_is_branch = is_branch;
   assign io_out_branch_op = io_in_inst[14:12];
   assign io_out_is_jal = is_jal;

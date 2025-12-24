@@ -42,7 +42,7 @@ class PMEMRead extends BlackBox with HasBlackBoxInline {
       |module PMEMRead(
       |  input         clock,
       |  input  [31:0] raddr,
-      |  output reg [31:0] rdata
+      |  output [31:0] rdata
       |);
       |
       |  // DPI-C 函数声明
@@ -54,9 +54,7 @@ class PMEMRead extends BlackBox with HasBlackBoxInline {
       |  // 调用 DPI-C 函数读取存储器
       |  // 地址按 4 字节对齐
       |  // assign rdata = pmem_read({raddr[31:2], 2'b00});   // 如果你想让寄存器瞬间访问而不是单周期...
-      |  always @(posedge clock) begin
-      |     rdata <= pmem_read({raddr[31:2], 2'b00});
-      |  end
+      |  assign rdata = pmem_read({raddr[31:2], 2'b00});
       |
       |endmodule
       |
