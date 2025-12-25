@@ -6,8 +6,12 @@ module MiniRV(
                 io_debug_inst
 );
 
+  wire [31:0] _fwu_io_rs1_data_fwd;
+  wire [31:0] _fwu_io_rs2_data_fwd;
+  wire        _hdu_io_stall;
+  wire        _hdu_io_flush;
   wire [31:0] _pmem_io_imem_rdata;
-  wire [31:0] _pmem_io_dmem_rdata;
+  wire [31:0] _pmem_io_dmem_resp_rdata;
   wire [31:0] _regfile_io_rs1_data;
   wire [31:0] _regfile_io_rs2_data;
   wire [4:0]  _wbu_io_rd_addr;
@@ -16,11 +20,11 @@ module MiniRV(
   wire [31:0] _lsu_io_out_wb_data;
   wire [4:0]  _lsu_io_out_rd_addr;
   wire        _lsu_io_out_reg_wen;
-  wire [31:0] _lsu_io_dmem_raddr;
-  wire        _lsu_io_dmem_wen;
-  wire [31:0] _lsu_io_dmem_waddr;
-  wire [31:0] _lsu_io_dmem_wdata;
-  wire [3:0]  _lsu_io_dmem_wmask;
+  wire [31:0] _lsu_io_dmem_req_raddr;
+  wire        _lsu_io_dmem_req_wen;
+  wire [31:0] _lsu_io_dmem_req_waddr;
+  wire [31:0] _lsu_io_dmem_req_wdata;
+  wire [3:0]  _lsu_io_dmem_req_wmask;
   wire [31:0] _exu_io_out_alu_result;
   wire [31:0] _exu_io_out_store_data;
   wire [4:0]  _exu_io_out_rd_addr;
@@ -81,9 +85,6 @@ module MiniRV(
   reg  [31:0] mem_wb_reg_wb_data;
   reg  [4:0]  mem_wb_reg_rd_addr;
   reg         mem_wb_reg_reg_wen;
-  wire        ifu_io_stall =
-    id_ex_reg_mem_ren & (|id_ex_reg_rd_addr)
-    & (id_ex_reg_rd_addr == _idu_io_rs1_addr | id_ex_reg_rd_addr == _idu_io_rs2_addr);
   always @(posedge clock) begin
     if (reset) begin
       if_id_pc <= 32'h0;
@@ -117,12 +118,14 @@ module MiniRV(
       mem_wb_reg_reg_wen <= 1'h0;
     end
     else begin
-      automatic logic _GEN = _exu_io_jump_en | ifu_io_stall;
-      if (_exu_io_jump_en) begin
+      automatic logic _GEN = _hdu_io_flush | _hdu_io_stall;
+      if (_hdu_io_flush) begin
         if_id_pc <= 32'h0;
         if_id_inst <= 32'h13;
       end
-      else if (~ifu_io_stall) begin
+      else if (_hdu_io_stall) begin
+      end
+      else begin
         if_id_pc <= _ifu_io_out_pc;
         if_id_inst <= _ifu_io_out_inst;
       end
@@ -162,7 +165,7 @@ module MiniRV(
     .io_out_inst   (_ifu_io_out_inst),
     .io_jump_en    (_exu_io_jump_en),
     .io_jump_addr  (_exu_io_jump_addr),
-    .io_stall      (ifu_io_stall),
+    .io_stall      (_hdu_io_stall),
     .io_imem_addr  (_ifu_io_imem_addr),
     .io_imem_rdata (_pmem_io_imem_rdata)
   );
@@ -171,20 +174,8 @@ module MiniRV(
     .io_in_inst       (if_id_inst),
     .io_rs1_addr      (_idu_io_rs1_addr),
     .io_rs2_addr      (_idu_io_rs2_addr),
-    .io_rs1_data
-      (ex_mem_reg_reg_wen & (|ex_mem_reg_rd_addr) & ex_mem_reg_rd_addr == _idu_io_rs1_addr
-         ? ex_mem_reg_alu_result
-         : mem_wb_reg_reg_wen & (|mem_wb_reg_rd_addr)
-           & mem_wb_reg_rd_addr == _idu_io_rs1_addr
-             ? mem_wb_reg_wb_data
-             : _regfile_io_rs1_data),
-    .io_rs2_data
-      (ex_mem_reg_reg_wen & (|ex_mem_reg_rd_addr) & ex_mem_reg_rd_addr == _idu_io_rs2_addr
-         ? ex_mem_reg_alu_result
-         : mem_wb_reg_reg_wen & (|mem_wb_reg_rd_addr)
-           & mem_wb_reg_rd_addr == _idu_io_rs2_addr
-             ? mem_wb_reg_wb_data
-             : _regfile_io_rs2_data),
+    .io_rs1_data      (_fwu_io_rs1_data_fwd),
+    .io_rs2_data      (_fwu_io_rs2_data_fwd),
     .io_out_pc        (_idu_io_out_pc),
     .io_out_rs1_data  (_idu_io_out_rs1_data),
     .io_out_rs2_data  (_idu_io_out_rs2_data),
@@ -232,22 +223,22 @@ module MiniRV(
     .io_jump_addr      (_exu_io_jump_addr)
   );
   LSU lsu (
-    .io_in_alu_result (ex_mem_reg_alu_result),
-    .io_in_store_data (ex_mem_reg_store_data),
-    .io_in_rd_addr    (ex_mem_reg_rd_addr),
-    .io_in_mem_wen    (ex_mem_reg_mem_wen),
-    .io_in_mem_ren    (ex_mem_reg_mem_ren),
-    .io_in_mem_op     (ex_mem_reg_mem_op),
-    .io_in_reg_wen    (ex_mem_reg_reg_wen),
-    .io_out_wb_data   (_lsu_io_out_wb_data),
-    .io_out_rd_addr   (_lsu_io_out_rd_addr),
-    .io_out_reg_wen   (_lsu_io_out_reg_wen),
-    .io_dmem_raddr    (_lsu_io_dmem_raddr),
-    .io_dmem_rdata    (_pmem_io_dmem_rdata),
-    .io_dmem_wen      (_lsu_io_dmem_wen),
-    .io_dmem_waddr    (_lsu_io_dmem_waddr),
-    .io_dmem_wdata    (_lsu_io_dmem_wdata),
-    .io_dmem_wmask    (_lsu_io_dmem_wmask)
+    .io_in_alu_result   (ex_mem_reg_alu_result),
+    .io_in_store_data   (ex_mem_reg_store_data),
+    .io_in_rd_addr      (ex_mem_reg_rd_addr),
+    .io_in_mem_wen      (ex_mem_reg_mem_wen),
+    .io_in_mem_ren      (ex_mem_reg_mem_ren),
+    .io_in_mem_op       (ex_mem_reg_mem_op),
+    .io_in_reg_wen      (ex_mem_reg_reg_wen),
+    .io_out_wb_data     (_lsu_io_out_wb_data),
+    .io_out_rd_addr     (_lsu_io_out_rd_addr),
+    .io_out_reg_wen     (_lsu_io_out_reg_wen),
+    .io_dmem_req_raddr  (_lsu_io_dmem_req_raddr),
+    .io_dmem_req_wen    (_lsu_io_dmem_req_wen),
+    .io_dmem_req_waddr  (_lsu_io_dmem_req_waddr),
+    .io_dmem_req_wdata  (_lsu_io_dmem_req_wdata),
+    .io_dmem_req_wmask  (_lsu_io_dmem_req_wmask),
+    .io_dmem_resp_rdata (_pmem_io_dmem_resp_rdata)
   );
   WBU wbu (
     .io_in_wb_data (mem_wb_reg_wb_data),
@@ -269,16 +260,39 @@ module MiniRV(
     .io_rd_wen   (_wbu_io_rd_wen)
   );
   PMEM pmem (
-    .clock          (clock),
-    .io_imem_addr   (_ifu_io_imem_addr),
-    .io_imem_rdata  (_pmem_io_imem_rdata),
-    .io_dmem_raddr  (_lsu_io_dmem_raddr),
-    .io_dmem_rdata  (_pmem_io_dmem_rdata),
-    .io_dmem_wen    (_lsu_io_dmem_wen),
-    .io_dmem_waddr  (_lsu_io_dmem_waddr),
-    .io_dmem_wdata  (_lsu_io_dmem_wdata),
-    .io_dmem_wmask  (_lsu_io_dmem_wmask),
-    .io_ebreak_inst (if_id_inst)
+    .clock              (clock),
+    .io_imem_addr       (_ifu_io_imem_addr),
+    .io_imem_rdata      (_pmem_io_imem_rdata),
+    .io_dmem_req_raddr  (_lsu_io_dmem_req_raddr),
+    .io_dmem_req_wen    (_lsu_io_dmem_req_wen),
+    .io_dmem_req_waddr  (_lsu_io_dmem_req_waddr),
+    .io_dmem_req_wdata  (_lsu_io_dmem_req_wdata),
+    .io_dmem_req_wmask  (_lsu_io_dmem_req_wmask),
+    .io_dmem_resp_rdata (_pmem_io_dmem_resp_rdata),
+    .io_ebreak_inst     (if_id_inst)
+  );
+  HDU hdu (
+    .io_id_rs1_addr   (_idu_io_rs1_addr),
+    .io_id_rs2_addr   (_idu_io_rs2_addr),
+    .io_id_ex_mem_ren (id_ex_reg_mem_ren),
+    .io_id_ex_rd_addr (id_ex_reg_rd_addr),
+    .io_ex_jump_en    (_exu_io_jump_en),
+    .io_stall         (_hdu_io_stall),
+    .io_flush         (_hdu_io_flush)
+  );
+  FWU fwu (
+    .io_id_rs1_addr     (_idu_io_rs1_addr),
+    .io_id_rs2_addr     (_idu_io_rs2_addr),
+    .io_id_rs1_data_raw (_regfile_io_rs1_data),
+    .io_id_rs2_data_raw (_regfile_io_rs2_data),
+    .io_ex_mem_rd_addr  (ex_mem_reg_rd_addr),
+    .io_ex_mem_rd_data  (ex_mem_reg_alu_result),
+    .io_ex_mem_reg_wen  (ex_mem_reg_reg_wen),
+    .io_mem_wb_rd_addr  (mem_wb_reg_rd_addr),
+    .io_mem_wb_rd_data  (mem_wb_reg_wb_data),
+    .io_mem_wb_reg_wen  (mem_wb_reg_reg_wen),
+    .io_rs1_data_fwd    (_fwu_io_rs1_data_fwd),
+    .io_rs2_data_fwd    (_fwu_io_rs2_data_fwd)
   );
   assign io_debug_pc = if_id_pc;
   assign io_debug_inst = if_id_inst;

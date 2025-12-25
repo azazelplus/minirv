@@ -10,37 +10,38 @@ module LSU(
   output [31:0] io_out_wb_data,
   output [4:0]  io_out_rd_addr,
   output        io_out_reg_wen,
-  output [31:0] io_dmem_raddr,
-  input  [31:0] io_dmem_rdata,
-  output        io_dmem_wen,
-  output [31:0] io_dmem_waddr,
-                io_dmem_wdata,
-  output [3:0]  io_dmem_wmask
+  output [31:0] io_dmem_req_raddr,
+  output        io_dmem_req_wen,
+  output [31:0] io_dmem_req_waddr,
+                io_dmem_req_wdata,
+  output [3:0]  io_dmem_req_wmask,
+  input  [31:0] io_dmem_resp_rdata
 );
 
   wire             _GEN = io_in_mem_op == 3'h2;
   wire             _GEN_0 = io_in_mem_op == 3'h0;
   wire [3:0][7:0]  _GEN_1 =
-    {{io_dmem_rdata[31:24]},
-     {io_dmem_rdata[23:16]},
-     {io_dmem_rdata[15:8]},
-     {io_dmem_rdata[7:0]}};
+    {{io_dmem_resp_rdata[31:24]},
+     {io_dmem_resp_rdata[23:16]},
+     {io_dmem_resp_rdata[15:8]},
+     {io_dmem_resp_rdata[7:0]}};
   wire [7:0]       byte_data = _GEN_1[io_in_alu_result[1:0]];
   wire [3:0][7:0]  _GEN_2 =
-    {{io_dmem_rdata[31:24]},
-     {io_dmem_rdata[23:16]},
-     {io_dmem_rdata[15:8]},
-     {io_dmem_rdata[7:0]}};
+    {{io_dmem_resp_rdata[31:24]},
+     {io_dmem_resp_rdata[23:16]},
+     {io_dmem_resp_rdata[15:8]},
+     {io_dmem_resp_rdata[7:0]}};
   wire             _GEN_3 = io_in_mem_op == 3'h1;
   wire [15:0]      half_data =
-    io_in_alu_result[1] ? io_dmem_rdata[31:16] : io_dmem_rdata[15:0];
+    io_in_alu_result[1] ? io_dmem_resp_rdata[31:16] : io_dmem_resp_rdata[15:0];
   wire [7:0][31:0] _GEN_4 =
     {{32'h0},
      {32'h0},
-     {{16'h0, io_in_alu_result[1] ? io_dmem_rdata[31:16] : io_dmem_rdata[15:0]}},
+     {{16'h0,
+       io_in_alu_result[1] ? io_dmem_resp_rdata[31:16] : io_dmem_resp_rdata[15:0]}},
      {{24'h0, _GEN_2[io_in_alu_result[1:0]]}},
      {32'h0},
-     {io_dmem_rdata},
+     {io_dmem_resp_rdata},
      {{{16{half_data[15]}}, half_data}},
      {{{24{byte_data[7]}}, byte_data}}};
   wire [3:0][31:0] _GEN_5 =
@@ -51,10 +52,10 @@ module LSU(
   assign io_out_wb_data = io_in_mem_ren ? _GEN_4[io_in_mem_op] : io_in_alu_result;
   assign io_out_rd_addr = io_in_rd_addr;
   assign io_out_reg_wen = io_in_reg_wen;
-  assign io_dmem_raddr = io_in_alu_result;
-  assign io_dmem_wen = io_in_mem_wen;
-  assign io_dmem_waddr = io_in_alu_result;
-  assign io_dmem_wdata =
+  assign io_dmem_req_raddr = io_in_alu_result;
+  assign io_dmem_req_wen = io_in_mem_wen;
+  assign io_dmem_req_waddr = io_in_alu_result;
+  assign io_dmem_req_wdata =
     _GEN
       ? io_in_store_data
       : _GEN_3
@@ -62,7 +63,7 @@ module LSU(
                ? {io_in_store_data[15:0], 16'h0}
                : {16'h0, io_in_store_data[15:0]})
           : _GEN_0 ? _GEN_5[io_in_alu_result[1:0]] : 32'h0;
-  assign io_dmem_wmask =
+  assign io_dmem_req_wmask =
     _GEN
       ? 4'hF
       : _GEN_3

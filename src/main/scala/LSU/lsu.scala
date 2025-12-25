@@ -35,15 +35,8 @@ class LSU extends Module {
     // ========== LSU->WBU接口 ==========
     val out = Output(new LS2WB) // 输出: LSU->WBU, 最终写回数据/rd/reg_wen
 
-    // ========== (数据访问Load接口 LSU<->PMEM) ==========
-    val dmem_raddr = Output(UInt(32.W))  // 数据读地址. LSU->PMEM, 给 PMEM 请求读
-    val dmem_rdata = Input(UInt(32.W))   // 数据读出. PMEM->LSU, PMEM 返回 32 位原始读数据
-
-    // ========== (数据写入Store接口 LSU->PMEM) ==========
-    val dmem_wen   = Output(Bool())      // 写使能.   LSU->PMEM, Store 指令时置 1
-    val dmem_waddr = Output(UInt(32.W))  // 写地址.   LSU->PMEM
-    val dmem_wdata = Output(UInt(32.W))  // 写数据.   LSU->PMEM（已按字节 lane 摆放）
-    val dmem_wmask = Output(UInt(4.W))   // 写掩码.   LSU->PMEM（按字节）
+    // ========== 数据存储器接口 LSU<->PMEM ==========
+    val dmem = new DMemIO       // req: LSU->PMEM, resp: PMEM->LSU
   })
 
 
@@ -53,9 +46,9 @@ class LSU extends Module {
 
   // ============ 数据存储器读取 ============
 
-  // LSU透传了io.in.alu_result -> io.dmem_raddr. 这是因为, 只有load 
-  io.dmem_raddr := addr
-  val rdata_raw = io.dmem_rdata
+  // LSU透传了io.in.alu_result -> io.dmem.req.raddr. 这是因为, 只有load 
+  io.dmem.req.raddr := addr
+  val rdata_raw = io.dmem.resp.rdata
   
   // 根据 mem_op 和地址偏移提取正确的数据
   val load_data = WireDefault(0.U(Config.XLEN.W))
@@ -98,8 +91,8 @@ class LSU extends Module {
   }
 
   // ============ 数据存储器写入 ============
-  io.dmem_wen   := in.mem_wen
-  io.dmem_waddr := addr
+  io.dmem.req.wen   := in.mem_wen
+  io.dmem.req.waddr := addr
   
   // 根据 mem_op 和地址偏移生成写数据和写掩码
   val wdata = WireDefault(0.U(32.W))
@@ -136,8 +129,8 @@ class LSU extends Module {
     }
   }
   
-  io.dmem_wdata := wdata
-  io.dmem_wmask := wmask
+  io.dmem.req.wdata := wdata
+  io.dmem.req.wmask := wmask
 
   // ============ 输出到 WBU ============
   // 选择写回数据：Load 指令从内存读，其他从 ALU

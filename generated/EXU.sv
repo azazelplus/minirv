@@ -47,7 +47,7 @@ module EXU(
      {io_in_rs1_data & alu_b},
      {io_in_rs1_data - alu_b},
      {io_in_rs1_data + alu_b}};
-  wire [31:0]       _branch_addr_T = io_in_pc + io_in_imm;
+  wire [31:0]       _pc_plus_imm_T = io_in_pc + io_in_imm;
   wire              _io_jump_en_T = io_in_is_jal | io_in_is_jalr;
   wire              _GEN_0 = (&io_in_branch_op) & io_in_rs1_data >= io_in_rs2_data;
   wire [7:0]        _GEN_1 =
@@ -63,7 +63,7 @@ module EXU(
     io_in_is_lui
       ? io_in_imm
       : io_in_is_auipc
-          ? _branch_addr_T
+          ? _pc_plus_imm_T
           : _io_jump_en_T ? io_in_pc + 32'h4 : _GEN[io_in_alu_op];
   assign io_out_store_data = io_in_rs2_data;
   assign io_out_rd_addr = io_in_rd_addr;
@@ -73,6 +73,6 @@ module EXU(
   assign io_out_reg_wen = io_in_reg_wen;
   assign io_jump_en = _io_jump_en_T | io_in_is_branch & _GEN_1[io_in_branch_op];
   assign io_jump_addr =
-    io_in_is_jalr ? io_in_rs1_data + io_in_imm & 32'hFFFFFFFE : _branch_addr_T;
+    io_in_is_jalr ? io_in_rs1_data + io_in_imm & 32'hFFFFFFFE : _pc_plus_imm_T;
 endmodule
 

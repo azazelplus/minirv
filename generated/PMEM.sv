@@ -3,12 +3,12 @@ module PMEM(
   input         clock,
   input  [31:0] io_imem_addr,
   output [31:0] io_imem_rdata,
-  input  [31:0] io_dmem_raddr,
-  output [31:0] io_dmem_rdata,
-  input         io_dmem_wen,
-  input  [31:0] io_dmem_waddr,
-                io_dmem_wdata,
-  input  [3:0]  io_dmem_wmask,
+  input  [31:0] io_dmem_req_raddr,
+  input         io_dmem_req_wen,
+  input  [31:0] io_dmem_req_waddr,
+                io_dmem_req_wdata,
+  input  [3:0]  io_dmem_req_wmask,
+  output [31:0] io_dmem_resp_rdata,
   input  [31:0] io_ebreak_inst
 );
 
@@ -19,15 +19,15 @@ module PMEM(
   );
   PMEMRead dmem_read (
     .clock (clock),
-    .raddr (io_dmem_raddr),
-    .rdata (io_dmem_rdata)
+    .raddr (io_dmem_req_raddr),
+    .rdata (io_dmem_resp_rdata)
   );
   PMEMWrite dmem_write (
     .clock (clock),
-    .wen   (io_dmem_wen),
-    .waddr (io_dmem_waddr),
-    .wdata (io_dmem_wdata),
-    .wmask (io_dmem_wmask)
+    .wen   (io_dmem_req_wen),
+    .waddr (io_dmem_req_waddr),
+    .wdata (io_dmem_req_wdata),
+    .wmask (io_dmem_req_wmask)
   );
   EBREAKDetect ebreak_detect (
     .clock (clock),

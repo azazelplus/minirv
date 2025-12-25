@@ -22,15 +22,8 @@ class PMEM extends Module {
     val imem_addr  = Input(UInt(32.W))   // 指令地址. IFU->PMEM, IFU提供[当前PC]给PMEM, 请求返回指令.
     val imem_rdata = Output(UInt(32.W))  // 指令数据. PMEM->IFU, 即IFU从PMEM读到的指令. 
     
-    // ========== 数据读接口 (DMEM Read) LSU<->PMEM ==========
-    val dmem_raddr = Input(UInt(32.W))   // 数据读地址. LSU->PMEM, LSU提供[读地址]给PMEM, 请求返回数据.
-    val dmem_rdata = Output(UInt(32.W))  // 数据读出.   PMEM->LSU, 即LSU从PMEM读到的数据.
-    
-    // ========== 数据写接口 (DMEM Write) LSU->PMEM ==========
-    val dmem_wen   = Input(Bool())       // 写使能. LSU->PMEM, LSU产生写使能信号给PMEM.
-    val dmem_waddr = Input(UInt(32.W))   // 写地址. LSU->PMEM, LSU产生写地址给PMEM. 
-    val dmem_wdata = Input(UInt(32.W))   // 写数据. LSU->PMEM, LSU产生写数据给PMEM.
-    val dmem_wmask = Input(UInt(4.W))    // 写掩码（按字节）. LSU->PMEM, LSU产生写掩码给PMEM.
+    // ========== 数据存储器接口 (DMEM) LSU<->PMEM ==========
+    val dmem = Flipped(new DMemIO)       // req: LSU->PMEM, resp: PMEM->LSU (Flipped 翻转方向)
     
     // ========== EBREAK 检测接口 MiniRV->PMEM ==========
     val ebreak_inst  = Input(UInt(32.W)) // 用于检测 EBREAK 的指令
@@ -48,16 +41,16 @@ class PMEM extends Module {
   // 数据存储器读取
   val dmem_read = Module(new PMEMRead)
   dmem_read.io.clock := clock
-  dmem_read.io.raddr := io.dmem_raddr
-  io.dmem_rdata := dmem_read.io.rdata
+  dmem_read.io.raddr := io.dmem.req.raddr
+  io.dmem.resp.rdata := dmem_read.io.rdata
   
   // 数据存储器写入
   val dmem_write = Module(new PMEMWrite)
   dmem_write.io.clock := clock
-  dmem_write.io.wen   := io.dmem_wen
-  dmem_write.io.waddr := io.dmem_waddr
-  dmem_write.io.wdata := io.dmem_wdata
-  dmem_write.io.wmask := io.dmem_wmask
+  dmem_write.io.wen   := io.dmem.req.wen
+  dmem_write.io.waddr := io.dmem.req.waddr
+  dmem_write.io.wdata := io.dmem.req.wdata
+  dmem_write.io.wmask := io.dmem.req.wmask
   
   // EBREAK 检测
   val ebreak_detect = Module(new EBREAKDetect)

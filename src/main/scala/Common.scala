@@ -121,6 +121,34 @@ class LS2WB extends Bundle {
 }
 
 /**
+  * 数据存储器请求接口 (LSU -> Memory)
+  * 用于 Load/Store 操作
+  */
+class DMemReq extends Bundle {
+  val raddr = UInt(Config.ADDR_WIDTH.W)   // 读地址
+  val wen   = Bool()                      // 写使能
+  val waddr = UInt(Config.ADDR_WIDTH.W)   // 写地址
+  val wdata = UInt(Config.XLEN.W)         // 写数据
+  val wmask = UInt(4.W)                   // 写掩码（按字节）
+}
+
+/**
+  * 数据存储器响应接口 (Memory -> LSU)
+  */
+class DMemResp extends Bundle {
+  val rdata = UInt(Config.XLEN.W)         // 读数据
+}
+
+/**
+  * 数据存储器接口 (双向)
+  * 从 LSU 视角：req 是输出，resp 是输入
+  */
+class DMemIO extends Bundle {
+  val req  = Output(new DMemReq)
+  val resp = Input(new DMemResp)
+}
+
+/**
   * 寄存器堆读端口
   */
 class RegFileReadPort extends Bundle {

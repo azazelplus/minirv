@@ -200,12 +200,7 @@ class MiniRV extends Module {
   lsu.io.in := ex_mem_reg
   
   // 连接 LSU 到 PMEM (数据存储器)
-  pmem.io.dmem_raddr := lsu.io.dmem_raddr
-  lsu.io.dmem_rdata  := pmem.io.dmem_rdata
-  pmem.io.dmem_wen   := lsu.io.dmem_wen
-  pmem.io.dmem_waddr := lsu.io.dmem_waddr
-  pmem.io.dmem_wdata := lsu.io.dmem_wdata
-  pmem.io.dmem_wmask := lsu.io.dmem_wmask
+  lsu.io.dmem <> pmem.io.dmem
 
   // ---------------------------------------------------------------------------------
   // 5.8 MEM/WB 寄存器更新
