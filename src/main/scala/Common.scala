@@ -86,8 +86,8 @@ class ID2EX extends Bundle {
   val rd_addr = UInt(Config.REG_ADDR_W.W) // 目标寄存器地址
   val alu_op  = UInt(4.W)                 // ALU 操作码
   val alu_src = Bool()                    // ALU 第二操作数选择 (0: rs2, 1: imm)
-  val mem_wen = Bool()                    // 内存写使能
-  val mem_ren = Bool()                    // 内存读使能
+  val mem_wen = Bool()                    // 内存写使能, =is_store
+  val mem_ren = Bool()                    // 内存读使能, =is_load
   val mem_op  = UInt(3.W)                 // 内存操作类型 (funct3: lw/lbu/sw/sb)
   val reg_wen = Bool()                    // 寄存器写使能
   val is_branch = Bool()                  // 是否为分支指令

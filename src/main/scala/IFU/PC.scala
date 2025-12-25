@@ -17,7 +17,7 @@ class PC extends Module {
     // PC 更新控制
     val jump_en   = Input(Bool())                       // 跳转使能
     val jump_addr = Input(UInt(Config.ADDR_WIDTH.W))    // 跳转目标地址
-    val stall     = Input(Bool())                       // 流水线暂停信号
+    val stall     = Input(Bool())                       // 流水线暂停信号. 实际是PC寄存器的使能.
     
     // 当前 PC 输出
     val pc        = Output(UInt(Config.ADDR_WIDTH.W))   // 当前 PC 值

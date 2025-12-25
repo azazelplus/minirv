@@ -18,7 +18,7 @@ import chisel3._
 import chisel3.util._
 
 /**
-  * 内存模块(DPI-C 存储器读取模块) Phy-MEM. 单周期访问.
+  * 内存模块(DPI-C 存储器读取模块) Phy-MEM. 组合瞬间访问.
   * 
   * 使用 Chisel 的 BlackBox 机制，定义外部 DPI-C 函数接口。
   * 实际的函数实现在 C++ 代码中。
